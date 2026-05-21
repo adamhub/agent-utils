@@ -364,7 +364,6 @@ def list_overdue_tasks(config, project_id=None, show_all=False, overdue_by_days=
         return None
 
     if not tasks:
-        print(f"No tasks found in project {project_id}.")
         return tasks
 
     # Fetch column map for this project so we can resolve column_id -> name
@@ -412,9 +411,6 @@ def list_overdue_tasks(config, project_id=None, show_all=False, overdue_by_days=
                 f"(due: {due_dt.strftime('%Y-%m-%d %H:%M')}, "
                 f"overdue by {int(days_overdue)} day{'s' if int(days_overdue) != 1 else ''})"
             )
-
-    if not overdue_tasks:
-        print("No overdue tasks found.")
 
     return overdue_tasks
 
