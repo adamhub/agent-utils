@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 """
-Kanboard utility script for creating tasks, checking status, and listing tasks.
+Kanboard utility script for creating tasks, checking status, listing tasks,
+and finding overdue tasks.
 
 This script provides a simplified interface to interact with Kanboard
 via its JSON-RPC API. Supports creating tasks, viewing task status,
-and listing tasks in a project.
+listing tasks, and listing overdue tasks in a project.
 
 Usage:
     python kanboard.py create <title> [options]
     python kanboard.py status <task-id> [options]
     python kanboard.py list [options]
+    python kanboard.py overdue [options]
 
 Commands:
     create              Create a new Kanboard task
     status              Show the status of a Kanboard task
     list                List tasks in a project
+    overdue             List overdue tasks (past due date) in a project
 
 Create options:
     --title TEXT        Task title (required)
@@ -32,6 +35,11 @@ Status options:
 List options:
     --project-id INT    Kanboard project ID (default: from env or 2)
     --all               Include closed/inactive tasks (default: active only)
+
+Overdue options:
+    --project-id INT    Kanboard project ID (default: from env or 2)
+    --all               Include closed/inactive tasks when checking for overdue
+    --overdue-by INT    Show tasks overdue by at least N days (default: 0 = any overdue)
 
 Environment variables (in .env or system):
     KANBOARD_URL        Kanboard API endpoint URL
@@ -66,6 +74,18 @@ Examples:
 
     # List all tasks (including closed) in a specific project
     python kanboard.py list --project-id 2 --all
+
+    # List overdue tasks
+    python kanboard.py overdue
+
+    # List overdue tasks in a specific project
+    python kanboard.py overdue --project-id 2
+
+    # List tasks overdue by at least 3 days
+    python kanboard.py overdue --overdue-by 3
+
+    # Include closed tasks when checking for overdue
+    python kanboard.py overdue --all
 """
 
 import os
@@ -303,6 +323,90 @@ def list_tasks(config, project_id=None, show_all=False):
     return tasks
 
 
+def list_overdue_tasks(config, project_id=None, show_all=False, overdue_by_days=0):
+    """
+    List overdue tasks (past their due date) in a Kanboard project.
+
+    Fetches active (or all) tasks via getAllTasks, filters those with a
+    ``date_due`` that is in the past, and prints each task's ID, title,
+    column name, and due date.
+
+    Parameters
+    ----------
+    config : dict
+        Configuration dict with KANBOARD_URL, KANBOARD_USERNAME, KANBOARD_API_TOKEN.
+    project_id : int, optional
+        Kanboard project ID. Defaults to config value.
+    show_all : bool
+        If True, include closed/inactive tasks when checking for overdue.
+        Defaults to False (active only).
+    overdue_by_days : int
+        Minimum number of days past the due date (default: 0 = any overdue).
+
+    Returns
+    -------
+    list or None
+        The list of overdue task dicts, or None on failure.
+    """
+    if project_id is None:
+        project_id = int(config.get('KANBOARD_PROJECT_ID', 2))
+
+    url = config['KANBOARD_URL']
+    auth = (config['KANBOARD_USERNAME'], config['KANBOARD_API_TOKEN'])
+
+    status_id = 0 if show_all else 1
+    tasks = kanboard_api_call(url, auth, "getAllTasks", {
+        "project_id": project_id,
+        "status_id": status_id,
+    })
+    if tasks is None:
+        print(f"Failed to fetch tasks for project {project_id}.")
+        return None
+
+    if not tasks:
+        print(f"No tasks found in project {project_id}.")
+        return tasks
+
+    # Fetch column map for this project so we can resolve column_id -> name
+    columns = kanboard_api_call(url, auth, "getColumns", {"project_id": project_id})
+    column_map = {}
+    if columns:
+        for col in columns:
+            column_map[int(col['id'])] = col['title']
+
+    now = datetime.now()
+    overdue_tasks = []
+
+    for task in tasks:
+        date_due = task.get('date_due')
+        if not date_due:
+            continue
+
+        # Kanboard returns date_due as a Unix timestamp (seconds since epoch)
+        try:
+            due_dt = datetime.fromtimestamp(int(date_due))
+        except (ValueError, TypeError, OSError):
+            continue
+
+        # Calculate how many days overdue (negative if not yet due)
+        delta = now - due_dt
+        days_overdue = delta.total_seconds() / 86400.0
+
+        if days_overdue >= overdue_by_days:
+            col_id = int(task['column_id'])
+            col_name = column_map.get(col_id, f"Column #{col_id}")
+            overdue_tasks.append(task)
+            print(
+                f"#{task['id']} [{col_name}] {task['title']} "
+                f"(due: {due_dt.strftime('%Y-%m-%d %H:%M')} "
+            )
+
+    if not overdue_tasks:
+        print("No overdue tasks found.")
+
+    return overdue_tasks
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Kanboard utility: create tasks and check task status.',
@@ -330,6 +434,12 @@ def main():
     list_parser = subparsers.add_parser('list', help='List tasks in a project')
     list_parser.add_argument('--project-id', type=int, help='Kanboard project ID (default: from env)')
     list_parser.add_argument('--all', action='store_true', help='Include closed/inactive tasks')
+
+    # Overdue sub-command
+    overdue_parser = subparsers.add_parser('overdue', help='List overdue tasks in a project')
+    overdue_parser.add_argument('--project-id', type=int, help='Kanboard project ID (default: from env)')
+    overdue_parser.add_argument('--all', action='store_true', help='Include closed/inactive tasks when checking for overdue')
+    overdue_parser.add_argument('--overdue-by', type=int, default=0, help='Show tasks overdue by at least N days (default: 0 = any overdue)')
 
     args = parser.parse_args()
 
@@ -374,6 +484,14 @@ def main():
             config=config,
             project_id=args.project_id,
             show_all=args.all,
+        )
+
+    elif args.command == 'overdue':
+        list_overdue_tasks(
+            config=config,
+            project_id=args.project_id,
+            show_all=args.all,
+            overdue_by_days=args.overdue_by,
         )
 
     else:
