@@ -73,6 +73,7 @@ import sys
 import json
 import argparse
 from datetime import datetime
+from pathlib import Path
 
 import requests
 
@@ -80,8 +81,10 @@ import requests
 def load_env():
     """Load configuration from .env file and environment variables."""
     env_vars = {}
+    # Resolve .env relative to the script's location, not the working directory
+    env_path = Path(__file__).resolve().parent / '.env'
     try:
-        with open('.env', 'r') as f:
+        with open(env_path, 'r') as f:
             for line in f:
                 line = line.strip()
                 if line and not line.startswith('#'):
@@ -164,20 +167,20 @@ def create_task(config, title, description=None, due_datetime=None,
     description : str, optional
         Task description (Markdown supported).
     due_datetime : datetime, optional
-        Due date and time for the task.
+        Due date/time.
     project_id : int, optional
         Kanboard project ID. Defaults to config value.
     column_id : int
-        Kanboard column ID (default: 1).
-    swimlane_id : int
-        Kanboard swimlane ID (default: 0 = default swimlane).
+        Kanboard column ID (default: 6 = Ready).
+    swimlane_id : int, optional
+        Kanboard swimlane ID. Omit for default swimlane.
     dry_run : bool
-        If True, preview without creating.
+        If True, print what would be done without making API call.
 
     Returns
     -------
-    int or None
-        The created task ID, or None on failure.
+    dict or None
+        The created task dict, or None on failure.
     """
     if project_id is None:
         project_id = int(config.get('KANBOARD_PROJECT_ID', 2))
@@ -185,54 +188,41 @@ def create_task(config, title, description=None, due_datetime=None,
     url = config['KANBOARD_URL']
     auth = (config['KANBOARD_USERNAME'], config['KANBOARD_API_TOKEN'])
 
-    if dry_run:
-        print(f"[DRY RUN] Would create task:")
-        print(f"  Title:       {title}")
-        print(f"  Description: {description or '(none)'}")
-        print(f"  Due:         {due_datetime.strftime('%Y-%m-%d %H:%M') if due_datetime else '(none)'}")
-        print(f"  Project ID:  {project_id}")
-        print(f"  Column ID:   {column_id}")
-        if swimlane_id is not None:
-            print(f"  Swimlane ID: {swimlane_id}")
-        return 9999
-
     params = {
         "title": title,
         "project_id": project_id,
         "column_id": column_id,
     }
-
-    # Only include swimlane_id if explicitly provided (Kanboard rejects 0)
-    if swimlane_id is not None:
-        params["swimlane_id"] = swimlane_id
-
     if description:
-        params["description"] = description
-
+        params['description'] = description
     if due_datetime:
-        # Kanboard accepts date string 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM'
-        params["date_due"] = due_datetime.strftime('%Y-%m-%d %H:%M')
+        params['date_due'] = due_datetime.strftime('%Y-%m-%d %H:%M')
+    if swimlane_id is not None:
+        params['swimlane_id'] = swimlane_id
 
-    result = kanboard_api_call(url, auth, "createTask", params)
-    if result:
-        print(f"Created task '{title}' with ID {result}")
-    else:
-        print(f"Failed to create task '{title}'")
-    return result
+    if dry_run:
+        print("[DRY RUN] Would create task with params:")
+        print(json.dumps(params, indent=2))
+        return None
+
+    task = kanboard_api_call(url, auth, "createTask", params)
+    if task:
+        print(f"Task created: #{task['id']} - {task['title']}")
+    return task
 
 
 def get_task_status(config, task_id, project_id=None):
     """
-    Retrieve and print the status (column name) of a Kanboard task.
+    Get the status (column name) of a Kanboard task.
 
     Parameters
     ----------
     config : dict
         Configuration dict with KANBOARD_URL, KANBOARD_USERNAME, KANBOARD_API_TOKEN.
     task_id : int
-        The Kanboard task ID to look up.
+        The task ID to look up.
     project_id : int, optional
-        Kanboard project ID. Defaults to config value.
+        Kanboard project ID. Used to resolve column names. Defaults to config value.
 
     Returns
     -------
