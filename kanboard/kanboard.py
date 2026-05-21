@@ -328,8 +328,8 @@ def list_overdue_tasks(config, project_id=None, show_all=False, overdue_by_days=
     List overdue tasks (past their due date) in a Kanboard project.
 
     Fetches active (or all) tasks via getAllTasks, filters those with a
-    ``date_due`` that is in the past, and prints each task's ID, title,
-    column name, and due date.
+    ``date_due`` that is in the past and that are not in a "Done" column,
+    and prints each task's ID, title, column name, and due date.
 
     Parameters
     ----------
@@ -368,16 +368,27 @@ def list_overdue_tasks(config, project_id=None, show_all=False, overdue_by_days=
         return tasks
 
     # Fetch column map for this project so we can resolve column_id -> name
+    # and identify the "Done" column
     columns = kanboard_api_call(url, auth, "getColumns", {"project_id": project_id})
     column_map = {}
+    done_column_ids = set()
     if columns:
         for col in columns:
-            column_map[int(col['id'])] = col['title']
+            col_id = int(col['id'])
+            column_map[col_id] = col['title']
+            # Treat any column whose title (case-insensitive) contains "done"
+            # as a completed/done column
+            if 'done' in col['title'].strip().lower():
+                done_column_ids.add(col_id)
 
     now = datetime.now()
     overdue_tasks = []
 
     for task in tasks:
+        # Skip tasks in a "Done" column — they're already completed
+        if int(task['column_id']) in done_column_ids:
+            continue
+
         date_due = task.get('date_due')
         if not date_due:
             continue
@@ -398,7 +409,8 @@ def list_overdue_tasks(config, project_id=None, show_all=False, overdue_by_days=
             overdue_tasks.append(task)
             print(
                 f"#{task['id']} [{col_name}] {task['title']} "
-                f"(due: {due_dt.strftime('%Y-%m-%d %H:%M')} "
+                f"(due: {due_dt.strftime('%Y-%m-%d %H:%M')}, "
+                f"overdue by {int(days_overdue)} day{'s' if int(days_overdue) != 1 else ''})"
             )
 
     if not overdue_tasks:
