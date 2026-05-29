@@ -1,0 +1,2559 @@
+result: CTRL K
+Developer Central
+SPIn specification
+SOAP API
+REST API
+(opens in a new tab)
+USB as Fallback
+Freedom to Design
+API Docs
+Hosted Payment Page
+API Docs
+Recurring Payments
+API Docs
+iPOSpays WooCommerce Extension
+How to Install the Plugin
+Payment Terminal Integrations
+Peripheral SDKs
+DvPayLite Deep Linking
+Through Intent Mode
+Through URI Mode
+Tap to Pay on Android
+In-App SDK
+Tap to Pay on iPhone
+Deep Linking
+V2 (Version 2)
+In-app SDK
+iPOS Transact
+API Docs
+Clear Card Encryption
+API Docs
+Migrate to iPOSpays
+FEED Integration
+API Docs
+Onboard Merchant
+API Docs
+Batch Report
+API Docs
+Transaction Status Check
+API Docs
+Commodity codes
+Error Codes and Messages
+
+On This Page
+
+Hosted Payment Page API
+Version History
+Prerequisites
+HPP URL to Request Payment Page
+HPP - getHostedPaymentPage API reference
+1. notifyByReturn – Request
+2. notifyBySMS – Request
+3. notifyByPOST – Request
+Level 3 / VISA CEDP
+Post Response Parameters
+POST API Data for Card Payments
+POST API Data with ACH
+HPP – queryPaymentStatus API
+Error Codes and Their Meaning
+Give us feedback →
+(opens in a new tab)
+Scroll to top
+Hosted Payment Page
+API Docs
+Hosted Payment Page API
+Version History
+Date	Version	Details
+	1.0	
+
+Initial release
+
+
+29/12/22	1.1	
+
+Added Tags Mandate
+
+
+13/01/23	1.2	
+
+Disclaimer option in personalization is added
+
+
+16/03/23	1.3	
+
+$0 Card Validation to update expired cards for tokenized transactions.
+
+
+17/10/25	1.4	
+
+Introduced support for Level 3 / VISA CEDP line item acceptance, enabling merchants to submit detailed transaction data, including item-level information and tax breakdowns, to qualify for enhanced interchange rates.
+
+Prerequisites
+For Sandbox (UAT)
+
+Users should be onboarded on iPOSpays sandbox(UAT) environment as a merchant and have a valid CloudPOS TPN.
+
+For Production (Live)
+
+Users should be onboarded on iPOSpays production environment as a merchant and have a valid CloudPOS TPN.
+
+If you do not have a TPN, contact your ISO or devsupport@dejavoo.io
+
+Get Auth Token
+
+Step 1 : Login to your merchant account and go to settings.
+Step 2 : Under Generate Ecom/TOP Merchant Keys section select TPN and Generate Token
+HPP URL to Request Payment Page
+
+iPOS HPP APIs are completely RESTful, and all our responses are returned in JSON. Note that the URL will be different for production. Once the integration has been completed, please write an email to devsupport@denovosystem.com to get production credentials.
+
+List of HPP APIs
+
+getHostedPaymentPage API Retrieves the URL for the hosted payment page.
+
+queryPaymentStatus API Checks the status of a payment.
+
+HPP - getHostedPaymentPage API reference
+
+Request Parameters
+
+getHostedPaymentPage API request contains 6 primary objects
+
+Objects	Description
+token *	AuthToken information to be sent in the header of the request
+merchantAuthentication *	Contains information about the merchant authentication details like TPN number, unique transaction reference id, etc…
+transactionRequest *	Contains information about the transactions like Type, Amount, Calculate Fee, Tips prompt, etc…
+notificationOption *	Contains information about the Notify options to be enabled to the merchants
+preferences *	Contains information about the avsVerification enabling or not, e-Receipt notify to customer enabling or not
+personalization	Contains parameters that control the payment form theme & color for that transaction
+
+Request Method
+
+HTTP Request Method	POST
+
+getHostedPaymentPage – Post API Endpoint
+
+Objects	Description
+Sandbox (UAT) URL:	https://payment.ipospays.tech/api/v1/external-payment-transaction
+Production (Live) URL:	https://payment.ipospays.com/api/v1/external-payment-transaction
+
+Request Parameters : Header
+
+Objects	Description
+token	AuthToken
+JSON Content-Type	application/json
+
+Request Parameters Body
+
+Field	Type	Description
+merchantAuthentication ( Obj )
+merchantId *	number	
+
+TPN for the merchant which is generated on iPOSpays portal.
+
+
+transactionReferenceId *	string	
+
+Unique transaction reference id, which can be used to status check later
+
+
+transactionRequest ( Obj )
+transactionType *	Number	
+
+Type of transactions to be processed.
+
+Note: 1 - refers to SALE transaction
+
+2 - refers to CARD VALIDATION (PREAUTH) transaction to validate the given card with amount 0 value
+
+
+amount *	String	
+
+(USD) Amount to be charged from customer card / account.
+
+Amount should be multiplied by 100 and sent. For example: If the requesting amount is $100 then the amount that should be sent is $10000. Because our API will consider the last 2 digits as $100.00
+
+Length: 8 characters
+
+Format: 12525 (125.25 $ X 100)
+
+
+calculateFee	Default	
+
+Fees to be calculated and added to the initial amount in the payment form.
+
+Values: true or false
+
+Default: true
+
+Note:
+
+If set to true -> iPOS-HPP access Fees details based on STEAM params and add it with base amount & display it.
+
+If set to false -> iPOS-HPP, will not consider the fee calculation
+
+
+tipsInputPrompt *	Boolean	
+
+Whether to ask customers to input the tips in the payment page.
+
+Note: if set to true -> iPOS-HPP will prompt & ask the customer to tip on the payment page.
+
+If set to false -> iPOS-HPP, will not show tip on the payment page.
+
+
+calcuateTax *	String	
+
+This field indicates whether tax should be calculated and added to the given amount on the payment input page.
+
+Values: true or false
+
+If set to false -> iPOS-HPP, will not consider the fee calculation
+
+Default: true.
+
+Behavior:
+
+- If true: iPOS-HPP accesses tax details based on the TPN parameters, calculates the total amount, and displays it.
+
+- If false: iPOS-HPP treats the amount input field (inclusive of tax) as the total amount to deduct.
+
+Note: For Level 3 (L3) data, this field is ignored since the tax amount is already provided in the L3Data Header object.
+
+
+feeAmount	String	
+
+Fee amount to be charged from the customer.
+
+Ensure the amount is multiplied by 100 before sending.
+
+Length: 8 characters
+
+Format: 12525 (125.25 $ X 100)
+
+if calculateFee is set to false -> Merchant can send fee amount along with this request.
+
+
+feeLabel	String	
+
+Fee label can be mentioned here.
+
+Format: Alphanumeric
+
+Length: up-to 32 characters
+
+
+tipAmount	String	
+
+Tip amount to be added.
+
+Ensure the amount is multiplied by 100 before sending.
+
+Length: 8 characters
+
+Format: 12525 (125.25 $ X 100)
+
+if tipsInputPrompt is set to false -> Merchant can send tip amount along with this request
+
+
+lTaxAmount	String	
+
+Local tax amount to be charged from the customer. Ensure the amount is multiplied by 100 before sending.
+
+if calculateTax is set to false -> Merchant can send local tax amount along with this request
+
+Length: 8 characters
+
+Format: 12525 (125.25 $ X 100)
+
+Note: For Level 3 (CEDP) data, this field is ignored.
+
+
+lTaxLabel	String	
+
+Local tax label can be mentioned here.
+
+Format: Alphanumeric
+
+Length: up-to 32 characters
+
+Note: For Level 3 (CEDP) data, this field is ignored.
+
+
+gTaxAmount	String	
+
+State tax amount to be charged from the customer. Ensure the amount is multiplied by 100 before sending.
+
+Length: 8 characters
+
+Format: 12525 (125.25 $ X 100)
+
+if calculateTax is set to false -> Merchant can send state tax amount along with this request
+
+Note: For Level 3 (CEDP) data, this field is ignored.
+
+
+gTaxLabel	String	
+
+State tax label can be mentioned here.
+
+Format: Alphanumeric
+
+Length: up-to 32 characters
+
+Note: For Level 3 (CEDP) data, this field is ignored.
+
+Field	Type	Description
+txReferenceTag1 ( Obj )
+tagLabel	String	
+
+Reference tag-1 label can be mentioned here
+
+Format: Alphanumeric
+
+Length: up-to 25
+
+Example value: Vehicle number
+
+Note: if tagLabel input is given, it will be reflected in the payment form.
+
+
+tagValue	string	
+
+Reference tag-1 value can be mentioned here
+
+Format: Alphanumeric
+
+Length: up-to 25
+
+Note: if tagValue input is given, it will be reflected in the payment form.
+
+if tagLabel input is given and tagValue input is empty, then we will prompt customer to input the tag value in the payment page form
+
+
+isTagMandate	Boolean	
+
+If isTagMandate is set to true -> tag field value input will be set to mandate to the customer in the payment page form.
+
+Values: true or false
+
+
+txReferenceTag2 ( Obj )
+tagLabel	String	
+
+Reference tag-2 label can be mentioned here
+
+Format: Alphanumeric
+
+Length: up-to 25
+
+Example value: Vehicle number
+
+Note: if tagLabel input is given, will be reflected in the payment form
+
+
+tagValue	string	
+
+Reference tag-2 value can be mentioned here
+
+Format: Alphanumeric
+
+Length: up-to 25
+
+Note: if tagValue input is given, it will be reflected in the payment form.
+
+if tagLabel input is given and tagValue input is empty, then we will prompt customer to input the tag value in the payment page form
+
+
+isTagMandate	Boolean	
+
+If isTagMandate is set to true -> tag field value input will be set to mandate to the customer in the payment page form.
+
+Values: true or false
+
+
+txReferenceTag3 ( Obj )
+tagLabel	String	
+
+Reference tag-3 label can be mentioned here
+
+Format: Alphanumeric
+
+Length: up-to 25
+
+Example value: Vehicle number
+
+Note: if tagLabel input is given, will be reflected in the payment form
+
+
+tagValue	string	
+
+Reference tag-3 value can be mentioned here
+
+Format: Alphanumeric
+
+Length: up-to 25
+
+Note: if tagValue input is given, it will be reflected in the payment form.
+
+if tagLabel input is given and tagValue input is empty, then we will prompt customer to input the tag value in the payment page form
+
+
+isTagMandate	Boolean	
+
+If isTagMandate is set to true -> tag field value input will be set to mandate to the customer in the payment page form.
+
+Values: true or false
+
+Field	Type	Description
+notificationOption ( obj )
+notifyBySMS *	Boolean	
+
+Whether to notify Payment status to the given merchant mobile number by SMS or not.
+
+Values: true or false
+
+if set to ‘true’ -> will send the payment status as SMS to the given merchant mobile number.
+
+If set to ‘false’ -> no notification will be sent.
+
+
+mobileNumber	string	
+
+Merchant mobile number to which notification to be sent.
+
+Length: 13
+
+Note: If notificationBySMS is set to true then this field input is mandatory
+
+
+notifyByPOST *	Boolean	
+
+Payment status will be sent to the given merchant postAPI Url upon requesting notifyByPOST is set to true.
+
+Values: true or false
+
+
+postAPI	String	
+
+Call-back API Url to which the payment status response to be notify.
+
+Format: should be a http or https Url
+
+
+notifyByRedirect *	Boolean	
+
+If set to true, to the given call-back or return Url to which iPOS-HP send or post the payment status response payload.
+
+Values: true or false
+
+
+authHeader	String	
+
+postAPI Url auth token key
+
+Format: Alphanumeric
+
+Length: <= 50 characters
+
+
+returnUrl	String	
+
+Merchant call-back or return Url, to which the payment status (success or decline) will be notified by iPOS-HP with response payloads.
+
+Format: should be a http / https Url
+
+
+failureUrl	String	
+
+Merchant failure call-back or return, to which the payment (declined or failure) status will be notified.
+
+Format: Should be a http/https Url
+
+Note: if this entity input is empty, the payment failure status will be sent to returnUrl.
+
+
+cancelUrl	String	
+
+Cancel Url of merchant site. If customer wants to skip or cancel the payment and return to merchant site.
+
+Format: should be http / https Url.
+
+
+expiry	Number	
+
+Payment Link Expiry
+
+Customers can define the expiry of their payment link by specifying the number of days.
+
+Type: Integer (number of days)
+
+Allowed Range: Minimum 1 day, Maximum 31 days
+
+Example: If the expiry is set to 5, the payment link will remain valid for 5 days from the date of creation.
+
+About above Payment Status Notifications
+
+Merchants who want to integrate for e-commerce:
+
+Can request the notifyByRedirect method to respond with the payment status to the given callback URL.
+
+Can also request notifyByPost.
+
+Merchants who want to integrate for Quick Pay / Send Link / QR code / TOP:
+
+Can use the notifyBySMS method to respond with the payment status to the given merchant mobile number.
+
+If merchants have a web server with an API:
+
+They can also request real-time notification by enabling notifyByPost set to 'true' to send the payment status to the given post API URL.
+Field	Type	Description
+preferences ( Obj )
+integrationType *	Number	
+
+It refers the type/source of iPOS-HP integration
+
+Values: 1,2,3,4
+
+Note: 1 - E-Commerce portal
+
+2 - E-Commerce mobile App
+
+3 - Quick pay / Send link
+
+4 - QR code
+
+5 - Tap on phone
+
+
+avsVerification *	Boolean	
+
+If it’s set to ‘true’ -> Customers will be asked to input the street & zip-code details in the credit card input page in-order to do the address verifications.
+
+Values: ‘true’ or ‘false’
+
+
+eReceipt *	Boolean	
+
+To send payment status notification to customers by Mobile SMS and/or E-Mail.
+
+Values: ‘true’ or ‘false’
+
+
+eReceiptInputPrompt *	Boolean	
+
+Whether to ask the customer to input the mobile number in-order to send the status of the payment.
+
+Values: ‘true’ or ‘false’
+
+Note: if set to ‘true’, iPOS-HP will prompt & ask the user to input the mobile and/or email, merchant not required to send the customer’s name, mobile or email on request parameters.
+
+If it is set to ‘false’ and eReceipt is set to ‘true’, then the merchant must send the customer’s mobile number and/or customer’s email to notify the payment status to customers.
+
+
+customerName	String	
+
+Customer full-name, will be used as salutation while notifying the payment status to the customer upon request by the merchant.
+
+Format: Alphabets, space
+
+Length: 25 characters
+
+Note: This input field is required, if eReceipt set to ‘true’
+
+
+customerEmail	String	
+
+Customer e-mail id to which payment status will be notified if requested
+
+Format: E-mail id
+
+Note: This input field is required, if eReceipt set to ‘true’ and eReceiptInputPrompt is set to false
+
+
+customerMobile	String	
+
+Customer mobile number to which payment status will be notified if requested.
+
+Format: +xxxxxxxxxxxx
+
+Length: 13
+
+Note: This input field is required, If eReceipt set to ‘true’
+
+
+requestCardToken *	Boolean	
+
+Card token value request, in-order to use it for further consecutive transaction requests.
+
+Values: true or false
+
+If set to ‘true’, iPOS-HPP will respond with a card token value or achToken value based on performed card or ach transaction. If it is set to ‘false’, iPOS-HPP will respond with ‘none’
+
+
+shortenURL	Boolean	
+
+shorten URL, in-order for the HPP to send a shortened URL instead of the long URL
+
+Values: true or false
+
+Note: If set to ‘true’, HPP will send a shortened URL instead of a long URL. If it set to ‘false’, HPP will send a shortened URL instead of a long URL.
+
+
+sendPaymentLink	Boolean	
+
+When this flag is set to true, the payment link is automatically sent to the customer’s mobile number and/or email provided in the request.
+
+When set to false, the API returns the payment link URL in the response, allowing you to copy or send it manually.
+
+In both cases, the payment link URL is included in the response. Only when sendPaymentLink is set to true will the link be sent directly to the customer.
+
+Values : true or false
+
+
+integrationVersion	String	
+
+New Enhancements will be add with v2 version if this field is passing we will consider as old request changes will not reflect
+
+Values : v2
+
+The base amount excludes the tip, and the ACH response code is set to 200 instead of 0.
+
+
+level3CEDP	Boolean	
+
+This Field will be used to process the transaction as level3 CEDP. If you are passing an l3Data object and passing this flag as false it will not be considered as an l3CDEP transaction.Need pass the value as true.
+
+Values : true or false
+
+Note: Default will be false
+
+CVV Verification CVV verification must be enabled on the portal for it to work.
+
+To enable:
+
+Navigate to S.T.E.A.M → Search TPN → Edit Parameter → Transaction.
+Under Card Entry Mode, enable Mandatory CVV.
+Field	Type	Description
+Personalization obj ( Optional )
+merchantName	String	
+
+Merchant / DBA name to be displayed in the payment input page.
+
+Length: 35 characters
+
+
+logoUrl	String	
+
+Logo image Url to be shown in the hosted payment input page.
+
+Format: Logo image Url should be a http / https
+
+
+themeColor	String	
+
+Hosted payment input page theme colour
+
+Length: 7 chars
+
+
+description	String	
+
+Merchant descriptions to be displayed in the payment input page.
+
+Length: 150 characters
+
+
+payNowButtonText	String	
+
+Pay now button text.
+
+Length: 15 characters
+
+Example Value: ‘Pay Now’
+
+
+buttonColor	String	
+
+Hosted payment button color
+
+Format: E-mail id
+
+Note: This input field is required, if eReceipt set to ‘true’ and eReceiptInputPrompt is set to false
+
+
+cancelButtonText	String	
+
+Cancel now button/link text.
+
+Example Value: ‘Pay Now’
+
+Length: 15 characters
+
+
+disclaimer	String	
+
+Merchant disclaimer information if any, to be displayed in the payment input page.
+
+Length: 150 characters
+
+Note: If set to ‘true’, HPP will send a shortened URL instead of a long URL. If it set to ‘false’, HPP will send a shortened URL instead of a long URL.
+
+Above personalization enables merchant to personalize the iPOS-HP payment input page with them logo, theme, Pay Now button colour. If the personalization entities values are not given, iPOS-HP will show the default settings.
+
+AVS (Obj) - Conditional (avsVerification is true below Object need to Provide)
+
+Field	Type	Description
+Zip	String	Zipcode information is used to qualify for the interchange fee, Length : 5 characters
+StreetNo	String	street information is used to qualify for the interchange fee , Length : 25 characters
+
+L3 Data (Level 3 / VISA CEDP Data) – Object – Conditional field containing Level 3 transaction details
+
+Field	Type	Description
+Header	Object	This data contains the L3 Header information required to process the transaction at Level 3.
+Items	Object	This data contains product information that needs to be processed at Level 3.
+Legend	Description
+M	Mandatory
+C	Conditional
+O	Optional
+
+Conditional (Level 3 Information)
+
+Field	Type	Description
+Headers ( Obj )
+TaxAmount(M) *	double	
+
+This is a CEDP summary header field that specifies the monetary amount of any additional sales tax applied to the transaction. It is a numeric field, up to 12 digits including decimals. Send 0 if no additional tax applies.
+
+Value: 1.05
+
+Length: 12
+
+
+LocalTaxFlag(M) *	Integer	
+
+This is a CEDP summary header field that indicates the type or characteristic of the local tax applied. It is a single-character field.
+
+Send 1 if local or sales tax applies; send 2 if the transaction is tax-exempt; send 0 only if tax is not provided.
+
+Value: 0, 1, 2
+
+Length: 1
+
+Note : If this value is set as 0 still if you have set the tax amount it will be not considered in calculation
+
+
+NationalTaxAmount(O)	double	
+
+This is a CEDP summary header field that specifies the total national or federal tax included in the transaction.
+
+Send 0 if no national tax applies.
+
+Value: 1.25
+
+Length: 12
+
+
+DestZipCode(C)	String	
+
+Specifies the postal or ZIP code of the destination address for shipped goods.
+
+Provide the actual shipping ZIP/postal code to qualify for line-item reporting benefits.
+
+Value: 45451
+
+Length: 12
+
+
+SummaryCommodityCode(O)	String	
+
+Specifies an international commodity code representing the goods or services supplied in the transaction.
+
+Provide the correct commodity code for the goods/services sold to maximize interchange.
+
+Value: 2123
+
+Length: 4
+
+
+TaxRateApplied(C)	double	
+
+Specifies the rate used to calculate tax for the transaction.
+
+It is a 4-character numeric field with an implied two-digit decimal.
+
+Send the applicable tax rate; set it to 0 if no tax applies.
+
+Value: 15
+
+Length: 2
+
+
+TotalDiscountAmount(C)	double	
+
+Contains the total discount amount applied against the line item total.
+
+Send the discount amount applied; send 0 if no discount applies.
+
+Value: 10.25
+
+Length: 12
+
+
+PoNumber(O)	String	
+
+Contains a Purchase Order Number provided by the Visa or Mastercard Purchasing Card cardholder.
+
+Include the PO number if available; leave it blank if not provided.
+
+Value: 10123456
+
+Length: 25 (Max)
+
+
+FreightAmount(C)	double	
+
+Specifies the freight or shipping portion of the total transaction amount.
+
+Send the shipping/freight amount included in the total; send 0 if not applicable.
+
+Value: 1.25
+
+Length: 12
+
+
+DutyAmount(C)	double	
+
+Specifies the fee amount associated with the import of purchased goods.
+
+Value: 1.26
+
+Length: 12
+
+
+ShipFromZipCode(C)	String	
+
+Specifies the postal or ZIP code of the address from which the purchased goods are shipped.
+
+Provide the actual shipping origin ZIP/postal code to qualify for line-item reporting benefits.
+
+Value: 11111
+
+Length: 10 (Max)
+
+
+DestCountryCode(C)	String	
+
+Contains the three-character code of the country where the goods are being shipped.
+
+Provide the actual country code.
+
+Value: 840
+
+Length: 3
+
+
+MerchantTaxId(O)	String	
+
+Contains the government-assigned tax identification number of the merchant from whom the goods or services were purchased.
+
+Provide the merchant tax ID if applicable; leave it blank if not.
+
+Value: 99999999999999999999
+
+Length: 15
+
+
+LineItemCount(M) *	String	
+
+Contains the total number of line item detail records associated with the transaction.
+
+For Visa: valid values are 000–998; for Mastercard: 000–098.
+
+Provide the exact count of line items.
+
+Value: 001 (Default)
+
+Length: 3
+
+
+AltTaxAmount(O)	double	
+
+Records the second tax amount in countries where more than one type of tax may apply to purchases.
+
+Send 0 if no alternate tax applies. For US merchants, this is typically not applicable unless a special tax applies.
+
+Value: 1.26
+
+Length: 12
+
+
+PurchaseIdentifier(C)	String	
+
+Contains a 25-character identifier assigned by the merchant.
+
+Provide the identifier if available; the value must not be all zeroes or spaces.
+
+Leave it blank if not used.
+
+Value: 452546456464646497854645
+
+Length: 25
+
+
+PurchaseIdFormatCode(M) *	Char	
+
+Contains a one-character code identifying if, and what type of, Purchase Identifier is associated with the transaction.
+
+Valid values:
+
+Z – Not Used
+
+0 – Reserved
+
+1 – Direct Marketing Order Number
+
+2 – Reserved
+
+3 – Auto Rental Agreement Number
+
+Length: 1
+
+Value: Z, 0, 1, 2, 3
+
+
+OrderDate(C)	String	
+
+This is a CEDP summary header field that contains the purchase order date in yyyy-MM-dd format. Provide the actual order date if available.
+
+Type: String
+
+Value: 2025-10-16
+
+
+AltTaxIndicator(O)	String	
+
+This is a CEDP summary header field that indicates whether the Alternate Tax Amount is included in the purchase amount for countries where multiple tax types may apply. It is a single-character field.
+
+Valid values:
+
+1 – Included
+
+0 – Not included
+
+Length: 1
+
+Value: 1, 0
+
+Field	Type	Description
+Array ( Obj )
+CommodityCode(C)	String	
+
+This is a CEDP line item group field that contains an international or national standardized description code for the individual good or service being supplied. Provide the correct commodity code for the item to maximize interchange benefits.
+
+Value:
+
+Length: 12
+
+
+Description(M) *	String	
+
+This is a CEDP line item group field that contains a description of the item(s) being supplied. It is a 35-character alphanumeric field, left-justified and space-filled. Provide a clear description of the item.
+
+Value:
+
+Length: 35
+
+
+ProductCode(O)	String	
+
+This is a CEDP line item group field that contains a merchant-defined description code for the item being purchased. It is a 4-character field, left-justified and space-filled. Provide a merchant-defined product code if available.
+
+Value:
+
+Length: 4
+
+
+Quantity(M) *	double	
+
+This is a CEDP line item group field that contains the quantity of the item(s) being purchased. It is a 12-character numeric field, right-justified and zero-filled. Send the actual quantity purchased.
+
+Value: 1
+
+Length: 12
+
+
+UnitOfMeasure(M) *	String	
+
+This is a CEDP line item group field that contains the code for the unit of measurement used in international trade. It is a 12-character alphanumeric field, left-justified and space-filled. Provide the correct unit code (e.g., EA, KG).
+
+Value: KG
+
+Length: 12
+
+
+UnitCost(M) *	double	
+
+This is a CEDP line item group field that contains the unit cost of the item. It is a 12-character numeric field with an implied 4-digit decimal, right-justified and zero-filled. Provide the actual unit cost.
+
+Value: 12.44
+
+Length: 4
+
+
+TaxAmount(C)	Double	
+
+This is a CEDP line item group field that contains the amount of any value-added or alternate tax associated with the purchased item. It is a 12-character numeric field, right-justified and zero-filled. For US merchants, send 0 unless another applicable tax applies.
+
+Value: 204.33
+
+Length: 12
+
+
+TaxRate(M) *	double	
+
+This is a CEDP line item group field that contains the tax rate used to calculate the tax amount. It is a 4-character numeric field with a two-character implied decimal, right-justified and zero-filled. For US merchants, send 0 unless another tax applies.
+
+Value: 2343
+
+Length: 4
+
+
+DiscountAmount(O)	double	
+
+This is a CEDP line item group field that contains any discount applied to the line item. It is a 12-character numeric field, right-justified and zero-filled. Provide the actual discount amount; send 0 if no discount applies.
+
+Value: 21.54
+
+Length: 12
+
+
+DiscountRate(C)	double	
+
+This is a CEDP line item group field that contains the discount rate applicable to the line item if DiscountIndicator = Y. It is a 9-character numeric field. Provide the discount rate; otherwise, send 0.
+
+Value: 12.63
+
+Length: 9
+
+
+DiscountIndicator(O)	Integer	
+
+This is a CEDP line item group field indicating whether a discount was applied:
+
+Y = discounted, N = not discounted, blank = not supported.
+
+It is a 1-character field. Send Y if a discount was applied; otherwise, send N.
+
+Value: Y(1), N(0)
+
+Length: 1
+
+
+NetGrossIndicator(O)	String	
+
+This is a CEDP line item group field indicating whether the item amount includes tax:
+
+N = does not include tax, Y = includes tax.
+
+It is a 1-character field. For US merchants, N is typically used.
+
+Value: N, Y
+
+Length: 1
+
+
+DebitCreditIndicator(O)	String	
+
+This is a CEDP line item group field indicating whether the line item amount is a Credit (C) or Debit (D).
+
+It is a 1-character field. Send C for credit and D for debit.
+
+Value: C, D
+
+Length: 1
+
+
+ExtLineAmount(M) *	double	
+
+Mandatory. This is a CEDP line item group field containing the total amount of the individual item (price × quantity).
+
+It is a 9-character numeric field, right-justified and zero-filled. Provide the actual total amount for the line item.
+
+Value: 23.12
+
+Length: 4
+
+
+AltTaxID(O)	Integer	
+
+Optional. This is a CEDP line item group field containing the tax ID of the merchant reporting alternate tax.
+
+It is a 4-character numeric field. Send the tax ID if an alternate tax applies; otherwise leave blank.
+
+Value: 3223
+
+Length: 4
+
+
+TaxTypeApplied(O)	String	
+
+Optional. This is a CEDP line item group field defining a tax category that may apply to domestic processing arrangements.
+
+It is a 4-character alphanumeric field. Provide the correct tax type if applicable; otherwise leave blank.
+
+Value: 1, 2, 3, 4
+
+Length: 4
+
+
+UnitPriceDecimal(O)	Integer	
+
+Optional. This is a CEDP line item group field indicating the number of decimal places in UnitCost (0–4).
+
+It is a 1-character numeric field. Send the correct number of decimals; otherwise leave blank.
+
+Value: 0, 1, 2, 3, 4
+
+Length: 1
+
+
+NationalTaxAmount(O)	double	
+
+Optional. This is a CEDP line item group field containing the amount of national tax included in LineItemTotal.
+
+Send 0 for US merchants.
+
+Value: 10.25
+
+Length: 12
+
+
+NationalTaxRate(O)	double	
+
+This is a CEDP line item group field that contains the national tax rate applicable to the line item.
+
+Send 0 for US merchants.
+
+Value: 10.53
+
+Length: 12
+
+
+TaxIndicator(C)	Integer	
+
+Conditional. This is a CEDP line item group field indicating the type or characteristic of the tax applied.
+
+It is a single-character field. Send 1 if tax applies; send 2 if the transaction is tax-exempt; send 0 only if tax is not provided.
+
+Value: 0, 1, 2
+
+Length: 1
+
+All above request fields variable are case sensitive
+
+Response Parameters - Generated URL page request (getHPP)
+
+Generate HPP Url page request – Success
+
+Variable Name	Type	Description
+message *	String	URL generated successfully
+information *	String	HPP (Hosted Payment Page) form url
+
+Generate HPP Url page request – Failure
+
+errors (Obj)
+
+Objects	Type	Description
+field *	String	Error input fields
+message *	String	Error message
+
+All above request fields variable are case sensitive
+
+Response Parameters - Payment Processor Notification Response
+
+Field	Type	Description
+iposHPResponse ( obj )
+responseCode *	Number	
+
+iPOS-HP response code
+
+Values: 200 - Payment success / Generated URL success
+
+400 - Payment failure or declined / Generated URL failure
+
+401 - Cancelled by Customer
+
+402 - Rejected by Customer
+
+
+responseMessage *	String	
+
+Values: Successful, Declined, Cancelled by Customer, Rejected by Customer, GeneratedURL Success, GeneratedURL Failure
+
+
+errResponseCode`**` *	Alphanumeric	
+
+iPOS-HP error response codeType: Number
+
+Values: PG error response code / payment processor error response code
+
+Note: upon ‘responseCode’ 200, this errResponseCode and errResponseMessage will be in response payload
+
+Length: up-to 3 characters
+
+PG Response code ( 3 digits)
+
+Example: 500, 501, 502,…
+
+Processor Response code (2 characters)
+
+Example: 00, 05, …
+
+# Error code & message details shared in below doc
+
+
+errResponseMessage *	String	
+
+iPOS-HP error response message
+
+Values: PG error response message / Payment processor error response message
+
+Note: upon ‘responseCode’ 200, this errResponseCode and errResponseMessage will be in response payload
+
+# Error code & message details shared in below doc
+
+
+transactionReferenceId *	String	
+
+Merchant unique transaction reference id
+
+Format: Alphanumeric
+
+Length: up-to 20 characters
+
+
+transactionType *	Number	
+
+Type of transactions processed.
+
+Note: 1 – SALE, 2 – CARD VALIDATION
+
+
+transactionNumber	Number	
+
+Invoice of Transaction number
+
+Length: 4 digits
+
+
+batchNumber	Number	
+
+Batch Number
+
+Length: 3 digits
+
+
+cardType	String	
+
+Credit / Debit Card Type
+
+Values: VISA, MASTERCARD, AMEX, DISCOVER, DINNERS, JCB
+
+
+cardLast4Digit	Number	
+
+Credit card last 4 digits
+
+Length: 4 digits
+
+
+amount	Float	
+
+Base or Total Amount charged from customer
+
+Format: xxxxxx.xx
+
+
+tips	Float	
+
+Tip amount charged from customer
+
+Format: xxxxxx.xx
+
+
+customFee	Float	
+
+Custom Fee charged from customer
+
+Format: xxxxxx.xx
+
+
+localTax	Float	
+
+Local tax amount charged from customer
+
+Format: xxxxxx.xx
+
+
+stateTax	Float	
+
+State tax amount charged from customer
+
+Format: xxxxxx.xx
+
+Length: 8
+
+
+totalAmount	Float	
+
+Total Amount charged from customer
+
+Format: xxxxxx.xx
+
+Length: 8
+
+
+responseApprovalCode	String	
+
+Response Approval Code
+
+Format: Alphanumeric
+
+Length: 6 chars
+
+Example: TAS164
+
+
+rrn	Number	
+
+Unique retrieval reference number
+
+Format: xxxxxx.xx
+
+Length: 12 characters
+
+
+transactionId *	Number	
+
+iPOS-HP unique transaction id
+
+Length: 32 characters
+
+
+cardToken	String	
+
+Card token value, in-order to use it for further consecutive transaction requests.
+
+Values: <card-token-value>
+
+Note: if requestCardToken is set to ‘true’, iPOS-HPP will respond with card token value. If requestCardToken is set to ‘false’, it will respond, none.
+
+
+avsRspMsg	String	
+
+AVS Response Message returned based on the processor response.The possible return values as follows :
+
+Values : ADDRESS MATCH, NO MATCH,EXACT MATCH,ZIP MATCH,AVS UNBL TO VIFY,AVS UNAVL TO PRC,AVS SRVC NT ALWD
+
+
+l2l3ValidationError	String	
+
+This field indicates whether any mandatory Level-3 tag is missing. If a required tag is not provided, the transaction will not be processed. The Level-3 transaction response will include details specifying which field caused the failure.
+
+
+l2l3Flag	String	
+
+This field indicates whether the transaction is processed with Level-3 data.
+
+Valid Values:
+
+“Y” = Processed as Level-3
+
+“N” = Not processed as Level-3
+
+“E” = Not processed as Level-3 due to an error or missing mandatory Level-3 tags.
+
+
+consumerId	String	
+
+avs(Obj)
+
+Field	Description
+Zip	In API request received/customer entered zip code will be returned in response.
+StreetNo	In API request received/customer entered street will be returned in response.
+
+All above request fields variable are case sensitive
+
+Post Request Parameters – JSON sample
+
+1. notifyByReturn – Request
+Post head request (header auth-token request)
+{
+  "token": "authToken",   //Example: "f0bed899539742309eebd8XXXX7edcf615888XXXXXXXX"
+  "content-type": "application/json"
+};
+Post body request
+{
+  "merchantAuthentication": {
+    "merchantId": "TPN_NUMBER",
+    "transactionReferenceId": "Transaction Reference Id"
+  },
+  "transactionRequest": {
+    "transactionType": 1/2,
+    "amount": "Amount-value",  // Example 1000 for 10$ i.e. 10x100
+    "calculateFee": true/false,
+    "tipsInputPrompt": true/false,
+    "calculateTax": true/false,
+    "feeAmount": "FEE-Amount-value",  // Example 1000 for 10$ i.e. 10x100
+    "feeLabel": "Fee Label",
+    "lTaxAmount": "L-TAX-Amount-value",  // Example 1000 for 10$ i.e. 10x100
+    "lTaxLabel": "Local-Tax-Label",
+    "gTaxAmount": "G-TAX-Amount-value",  // Example 1000 for 10$ i.e. 10x100
+    "gTaxLabel": "State Tax label",
+ 
+    "txReferenceTag1": {
+      "tagLabel": "Tag-label-1",  // Example “Vehicle Number”
+      "tagValue": "Tag-1 value",  // Example “TN43AA445”
+      "isTagMandate": true/false
+    },
+ 
+    "txReferenceTag2": {
+      "tagLabel": "Tag-label-2",
+      "tagValue": "Tag-2 value",
+      "isTagMandate": true/false
+    },
+ 
+    "txReferenceTag3": {
+      "tagLabel": "Tag-label-3",
+      "tagValue": "Tag-3 value",
+      "isTagMandate": true/false
+    },
+    "expiry": 1                  //Integer Value
+  },
+ 
+  "notificationOption": {
+    "notificationBySMS": false,
+    "mobileNumber": "",
+    "notifyByPOST": false,
+    "authHeader": "",
+    "postAPI": "",
+    "notifyByRedirect": true,
+    "returnUrl": "<return url>",      // Example https://www.merchanturl.com/thankyou/success.php
+    "failureUrl": "<failure url>",    // Example https://www.merchanturl.com/thankyou/failure.php
+    "cancelUrl": "<cancel url>"       // Example https://www.merchanturl.com/checkout.php
+  },
+ 
+  "preferences": {
+    "integrationType": "HPP integration type",
+    "avsVerification": true/false,
+    "eReceipt": true/false,
+    "eReceiptInputPrompt": true/false,
+    "customerName": "Customer_Name",
+    "customerEmail": "Customer_Email",
+    "customerMobile": "Customer_mobile_number_with_ISD_code",
+    "requestCardToken": true/false,
+    "shortenURL": true/false,
+    "sendPaymentLink": true, // true/false
+                      // Sends the payment link directly to the customer's mobile/email when set to true.
+                      // The payment link URL will be included in the response regardless of this flag's value.
+    "integrationVersion": "v2"
+  },
+ 
+  "personalization": {
+    "merchantName": "Merchant / DBS Name",
+    "logoUrl": "http or https image url",     // Eg., "https://merchanturl.com/logo/images/logo-name.png"
+    "themeColor": "theme colour",             // Example #808080
+    "description": "Merchant given description",
+    "payNowButtonText": "pay now button text", // Example "Pay Now"
+    "buttonColor": "pay button colour",       // Example #808080
+    "cancelButtonText": "cancel button text", // Example "Go to merchant site"
+    "disclaimer": "Disclaimer information can be placed here"  // Example "Only VISA card accepted"
+  }
+}
+2. notifyBySMS – Request
+Post head request (header auth-token request)
+{
+    "token": "authToken",   //Example: "f0bed899539742309eebd8XXXX7edcf615888XXXXXXXX"
+    "content-type": "application/json"
+};
+Post body request
+{
+  "merchantAuthentication": {
+    "merchantId": "TPN_NUMBER",
+    "transactionReferenceId": "Transaction Reference Id"
+  },
+ 
+  "transactionRequest": {
+    "transactionType": 1,
+    "amount": "Amount-value",  // example 1000 for 10$ i.e. 10x100
+    "calculateFee": true,
+    "tipsInputPrompt": true,
+    "calculateTax": true,
+    "feeAmount": "FEE-Amount-value",  // Example 1000 for 10$ i.e. 10x100
+    "feeLabel": "Fee Label",
+    "lTaxAmount": "L-TAX-Amount-value",  // Example 1000 for 10$ i.e. 10x100
+    "lTaxLabel": "Local-Tax-Label",
+    "gTaxAmount": "G-TAX-Amount-value",  // Example 1000 for 10$ i.e. 10x100
+    "gTaxLabel": "State Tax label",
+ 
+    "txReferenceTag1": {
+      "tagLabel": "Tag-label-1",  // Example “Vehicle Number”
+      "tagValue": "Tag-1 value",  // Example “TN43AA445”
+      "isTagMandate": true
+    },
+ 
+    "txReferenceTag2": {
+      "tagLabel": "Tag-label-2",
+      "tagValue": "Tag-2 value",
+      "isTagMandate": true
+    },
+ 
+    "txReferenceTag3": {
+      "tagLabel": "Tag-label-3",
+      "tagValue": "Tag-3 value",
+      "isTagMandate": true
+    },
+    "expiry": 1                  //Integer Value
+  },
+ 
+  "notificationOption": {
+    "notificationBySMS": true,
+    "mobileNumber": "Merchant Mobile Number Ex +17878787878",
+    "notifyByPOST": false,
+    "authHeader": "",
+    "postAPI": "",
+    "notifyByRedirect": false,
+    "returnUrl": "",
+    "failureUrl": "",
+    "cancelUrl": ""
+  },
+ 
+  "preferences": {
+    "integrationType": "HPP integration type",  // Example for e-commerce value is 1
+    "avsVerification": true,
+    "eReceipt": true,
+    "eReceiptInputPrompt": true,
+    "customerName": "Customer_Name",
+    "customerEmail": "Customer_Email",
+    "customerMobile": "Customer_mobile_number_with_ISD_code",
+    "requestCardToken": true,
+    "shortenURL": true,
+    "sendPaymentLink": true/false,
+  },
+ 
+  "personalization": {
+    "merchantName": "Merchant / DBS Name",  // Example "walmart"
+    "logoUrl": "http or https image url",  // Eg., "https://merchanturl.com/logo/images/logo-name.png"
+    "themeColor": "theme colour",  // Example #808080
+    "description": "Merchant given description",
+    "payNowButtonText": "pay now button text",  // Example "Pay Now"
+    "buttonColor": "pay button colour",  // Example #808080
+    "cancelButtonText": "cancel button text",  // Example "Go to merchant site"
+    "disclaimer": "Disclaimer information can be placed here"  // Example "Only VISA card accepted"
+  }
+}
+3. notifyByPOST – Request
+Post head request (header auth-token request)
+{
+    "token": "authToken",   //Example: "f0bed899539742309eebd8XXXX7edcf615888XXXXXXXX"
+    "content-type": "application/json"
+};
+Post body request
+{
+  "merchantAuthentication": {
+    "merchantId": "TPN_NUMBER",
+    "transactionReferenceId": "Transaction Reference Id"
+  },
+ 
+  "transactionRequest": {
+    "transactionType": 1,
+    "amount": "Amount-value",
+    "calculateFee": true,
+    "tipsInputPrompt": true,
+    "calculateTax": true,
+    "feeAmount": "FEE-Amount-value",
+    "feeLabel": "Fee Label",
+    "lTaxAmount": "L-TAX-Amount-value",
+    "lTaxLabel": "Local-Tax-Label",
+    "gTaxAmount": "G-TAX-Amount-value",
+    "gTaxLabel": "State Tax label",
+ 
+    "txReferenceTag1": {
+      "tagLabel": "Tag-label-1",
+      "tagValue": "Tag-1 value",
+      "isTagMandate": true
+    },
+ 
+    "txReferenceTag2": {
+      "tagLabel": "Tag-label-2",
+      "tagValue": "Tag-2 value",
+      "isTagMandate": true
+    },
+ 
+    "txReferenceTag3": {
+      "tagLabel": "Tag-label-3",
+      "tagValue": "Tag-3 value",
+      "isTagMandate": true
+    },
+    "expiry": 1                  //Integer Value
+  },
+ 
+  "notificationOption": {
+    "notificationBySMS": false,
+    "mobileNumber": "",
+    "notifyByPOST": true,
+    "authHeader": "API Access token",
+    "postAPI": "Merchant post API Url",
+    "notifyByRedirect": false,
+    "returnUrl": "",
+    "failureUrl": "",
+    "cancelUrl": ""
+  },
+ 
+  "preferences": {
+    "integrationType": "HPP integration type",
+    "avsVerification": true,
+    "eReceipt": true,
+    "eReceiptInputPrompt": true,
+    "customerName": "Customer_Name",
+    "customerEmail": "Customer_Email",
+    "customerMobile": "Customer_mobile_number_with_ISD_code",
+    "requestCardToken": true,
+    "shortenURL": true,
+    "sendPaymentLink": true/false,
+  },
+ 
+  "personalization": {
+    "merchantName": "Merchant / DBS Name",
+    "logoUrl": "http or https image url",
+    "themeColor": "theme colour",
+    "description": "Merchant given description",
+    "payNowButtonText": "pay now button text",
+    "buttonColor": "pay button colour",
+    "cancelButtonText": "cancel button text",
+    "disclaimer": "Disclaimer information can be placed here"
+  }
+}
+Level 3 / VISA CEDP
+
+Sample Payload Post Request Parameters
+
+As part of VISA’s updated CEDP (Commercial Enhanced Data Program), Level 3 data is now required for commercial and corporate card transactions to qualify for optimized interchange rates.
+
+To support this, please ensure you are submitting accurate, complete, and properly formatted Level 3 data in your requests. Poor data quality (e.g., missing fields, incorrect values, or placeholder data) may lead to downgraded interchange qualification or rejections.
+
+This includes fields such as item descriptions, quantities, unit costs, tax amounts, and other line-item details. The cleaner and more complete the data, the better the chances of qualifying for enhanced rates.
+
+Include level3CEDPand set it to true to send Level 3 / VISA CEDP fields in the following notification request types to qualify for optimized interchange rates:
+
+1. notifyByReturn – Request
+
+2. notifyBySMS - Request
+
+3. notifyByPost - Request
+
+Here’s a sample request from notifyByReturn with Level 3 / VISA CEDP line items
+
+Example:
+
+1. notifyByReturn – Request
+
+Post head request (header auth-token request)
+{
+  "token": "authToken",   //Example: "f0bed899539742309eebd8XXXX7edcf615888XXXXXXXX"
+  "content-type": "application/json"
+};
+Post Body Request
+{
+  "merchantAuthentication": {
+    "merchantId": "TPN_NUMBER",
+    "transactionReferenceId": "Transaction Reference Id"
+  },
+  "transactionRequest": {
+    "transactionType": 1/2,
+    "amount": "Amount-value",   // Example 1000 for 10$ i.e. 10x100
+    "calculateFee": true/false,
+    "tipsInputPrompt": true/false,
+    "calculateTax": true/false,
+    "feeAmount": "FEE-Amount-value",   // Example 1000 for 10$ i.e. 10x100
+    "feeLabel": "Fee Label",
+    "tipAmount": "TIP-Amount-value",   // Example 1000 for 10$ i.e. 10x100
+    "lTaxAmount": "L-TAX-Amount-value",   // Example 1000 for 10$ i.e. 10x100
+    "lTaxLabel": "Local-Tax-Label",
+    "gTaxAmount": "G-TAX-Amount-value",   // Example 1000 for 10$ i.e. 10x100
+    "gTaxLabel": "State Tax label",
+    "txReferenceTag1": {
+      "tagLabel": "Tag-label-1",  // Example "Vehicle Number"
+      "tagValue": "Tag-1 value",  // Example "TN43AA445"
+      "isTagMandate": true/false
+    },
+    "txReferenceTag2": {
+      "tagLabel": "Tag-label-2",
+      "tagValue": "Tag-2 value",
+      "isTagMandate": true/false
+    },
+    "txReferenceTag3": {
+      "tagLabel": "Tag-label-3",
+      "tagValue": "Tag-3 value",
+      "isTagMandate": true/false
+    },
+    "expiry": 1
+  },
+  "notificationOption": {
+    "notificationBySMS": false,
+    "mobileNumber": "",
+    "notifyByPOST": false,
+    "authHeader": "",
+    "postAPI": "",
+    "notifyByRedirect": true,
+    "returnUrl": "<return url>",   // Example https://www.merchanturl.com/thankyou/success.php
+    "failureUrl": "<failure url>",   // Example https://www.merchanturl.com/thankyou/failure.php 
+    "cancelUrl": "<cancel url>"     // Example https://www.merchanturl.com/checkout.php
+  },
+  "preferences": {
+    "integrationType": "HPP integration type",
+    "avsVerification": true/false,
+    "eReceipt": true/false,
+    "eReceiptInputPrompt": true/false,
+    "customerName": "Customer_Name",
+    "customerEmail": "Customer_Email",
+    "customerMobile": "Customer_mobile_number_with_ISD_code",
+    "requestCardToken": true/false,
+    "shortenURL": true/false,
+    "sendPaymentLink": true/false,
+    "integrationVersion": "v2",
+    "level3CEDP": true   // Set this to true to include Level 3 / VISA CEDP (Corporate Card Enhanced Data Program) fields.
+                        // This applies to all three request types: notifyByReturn, notifyBySMS, and notifyByPost.
+                       // Once enabled, the related Level 3 fields become mandatory for accessing the HPP URL.
+ 
+  },
+  "personalization": {
+    "merchantName": "Merchant / DBS Name",
+    "logoUrl": "http or https image url",  // Eg., "https://merchanturl.com/logo/images/logo-name.png"
+    "themeColor": "theme colour",          // Example #808080
+    "description": "Merchant given description",
+    "payNowButtonText": "pay now button text",  // Example "Pay Now"
+    "buttonColor": "pay button colour",         // Example #808080
+    "cancelButtonText": "cancel button text",   // Example "Go to merchant site"
+    "disclaimer": "Disclaimer information can be placed here"  // Example "Only VISA card accepted"
+  },
+  "L3Data": {
+    "Header": {
+      "TaxAmount": 0,
+      "LocalTaxFlag": 0,
+      "NationalTaxAmount": 0,
+      "DestZipCode": "42",
+      "SummaryCommodityCode": "0987",
+      "TaxRateApplied": 0,
+      "TotalDiscountAmount": 1.25,
+      "PoNumber": "10123456",
+      "FreightAmount": 1.2,
+      "DutyAmount": 1.2,
+      "ShipFromZipCode": "90",
+      "DestCountryCode": "840",
+      "MerchantTaxId": "457896",
+      "LineItemCount": 1,
+      "AltTaxAmount": 0,
+      "PurchaseIdentifier": "",
+      "PurchaseIdFormatCode": "1",
+      "OrderDate": "2025-10-16",
+      "AltTaxIndicator": true
+    },
+    "items": [
+      {
+        "CommodityCode": "10",
+        "Description": "GelatoIceCream",
+        "ProductCode": "2012",
+        "Quantity": 1,
+        "UnitOfMeasure": "ITM",
+        "UnitCost": 20,
+        "TaxAmount": 0,
+        "TaxRate": 0,
+        "DiscountAmount": 1.5,
+        "DiscountRate": 1,
+        "DiscountIndicator": true,
+        "NetGrossIndicator": false,
+        "DebitCreditIndicator": "C",
+        "ExtLineAmount": 25,
+        "AltTaxID": 0,
+        "TaxTypeApplied": "",
+        "UnitPriceDecimal": 0,
+        "NationalTaxAmount": 0,
+        "NationalTaxRate": 0,
+        "TaxIndicator": 0
+      }
+    ]
+  }
+}
+Post Response Parameters
+
+Form Token Generated URL
+
+This response occurs after requesting a payment URL (i.e., generating a form token). It indicates whether the URL creation succeeded or failed.
+
+Success Response for long URL
+{
+    "message": "Url generated Successful",
+    "information": "https://payment.ipospays.tech/api/v1/externalPay?t=< token-value >"
+}
+Success Response for Short URL
+{
+    "message": "URL generated successfully",
+    "information": "https://api.denovosystem.tech/v1/sl/344r0Cd101101T312"
+}
+Failure Response
+{
+  "errors": [
+    {
+      "field": "merchantAuthentication.merchantId",
+      "message": "Invalid Merchant Id"
+    },
+    {
+      "field": "transactionRequest.transactionType",
+      "message": "Invalid Transaction Type"
+    }
+  ]
+}
+POST API Data for Card Payments
+
+This response occurs after processing a card transaction (credit/debit). It provides a full record of the transaction outcome.
+
+Success / Failure Response
+{
+  "iposHPResponse": {
+    "responseCode": "iPOS-HP response code like 200, 400,...",
+    "responseMessage": "Successful/Declined/Cancelled By Customer/Rejected By Customer",
+    "errResponseCode": "Error response code",
+    "errResponseMessage": "Error response message",
+    "transactionReferenceId": "merchant unique transaction reference id sent on request",
+    "transactionType": "1-sale/ 2-card validation",
+    "transactionId": "Unique transaction Id of iPOS-HPP",
+    "transactionNumber": "4 digits of transaction number from processor",
+    "batchNumber": "3 digits of batch number from processor",
+    "cardType": "VISA/MASTERCARD/etc...",
+    "cardLast4Digit": "last 4 digit of credit/debit card",
+    "amount": "base amount or total amount charged",
+    "tips": "tip amount",
+    "customFee": "custom fee",
+    "localTax": "local tax",
+    "stateTax": "state tax",
+    "totalAmount": "total amount charged",
+    "responseApprovalCode": "response approval code from processor ex: TAS164",
+    "rrn": "retrieval reference number from processor #219313501821",
+    "cardToken": "card-token-value",
+    "avsRespMeg": "ADDRESS MATCH",
+    "avs": {
+      "Zip": "100004",
+      "StreetNo": "15205 North Kierland Blvd. Suite 100"
+    }
+    "consumerId" : "12412313"
+  }
+}
+POST API Data with ACH
+
+This response occurs after processing an ACH (bank transfer) transaction.
+
+Success Response
+{
+	"responseCode": 0,
+	"responseMessage": "Success",
+	"errResponseCode": null,
+	"errResponseMessage": null,
+	"transactionReferenceId": "154f112f3XlF6yOa",
+	"transactionType": 10,
+	"transactionNumber": "0",
+	"batchNumber": "389",
+	"cardType": "CHECK",
+	"cardLast4Digit": null,
+	"amount": "100",
+	"tips": "0",
+	"customFee": null,
+	"localTax": null,
+	"stateTax": null,
+	"totalAmount": 100,
+	"responseApprovalCode": 00,//or 57,
+	"rrn": "154f112f3XlF6yOa",
+	"transactionId": "21948315670249370721744696937750",
+	"responseCardToken": null,
+	"isAlter": "true",
+	"avsRespMeg": null,
+	"avs": null,
+	"achData": {
+		"accountNumber": "************6843",
+		"firstName": "Ashok",
+		"lastName": "Pathuri",
+    "providerName": "PAYA ACH",
+		"achToken": "05944FB3E1DA4663868455AF630F45BE"
+	}
+  "consumerId" : "12412313"
+}
+
+HPP API – Integration References
+
+AngularJs Sample
+import { Component, OnInit } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+// Import HttpClientModule and add Providers: [HttpClient] in your module.ts file
+export interface Payload {
+  merchantAuthentication: MerchantAuthentication;
+  transactionRequest: TransactionRequest;
+  personalization: Personalization;
+  notificationOption: NotificationOption;
+  preferences: Preferences;
+}
+export interface MerchantAuthentication {
+  merchantId: string;
+  transactionReferenceId: string;
+}
+export interface TransactionRequest {
+  transactionType: number;
+  amount: number;
+  calculateFee: boolean;
+  invoiceNumber: string;
+}
+export interface Personalization {
+  logo: string;
+  themeColor: string;
+  description: string;
+  payNowButtonText: string;
+  buttonColor: string;
+  cancelButtonText: string;
+}
+export interface NotificationOption {
+  returnUrl: string;
+  failureUrl: string;
+  authHeader: string;
+  cancelUrl: string;
+  notifyByRedirect: boolean;
+  notifyByPOST: boolean;
+  postAPI: string;
+  mobileNumber: string;
+  notifyBySMS: boolean;
+}
+export interface Preferences {
+  eReceipt: boolean;
+  avsVerification: boolean;
+  customerName: string;
+  customerEmail: string;
+  customerMobile: string;
+  integrationType: number;
+  requestCardToken: boolean;
+}
+export interface PaymentSuccessResponse {
+  information: string; // This will be the redirect URL
+  message: string;
+}
+export interface PaymentFailureResponse {
+  errors?: ErrorsEntity[] | null;
+}
+export interface ErrorsEntity {
+  field: string;
+  message: string;
+}
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css'],
+})
+export class AppComponent implements OnInit {
+  generatedTpn: string = '';
+  generatedToken: string = '';
+  routeUrl: string = 'Your Route URL Here';
+  paymentUrl: string = 'Your Route URL';
+  // All the URLs should be trimmed. No trailing and leading white spaces
+  payload: Payload = {
+    merchantAuthentication: {
+      merchantId: this.generatedTpn,
+      transactionReferenceId: Math.random().toString(36).slice(2),
+    },
+    transactionRequest: {
+      transactionType: 1,
+      amount: 100, // Amount (e.g., 100 = 1$)
+      calculateFee: true,
+      invoiceNumber: '',
+    },
+    personalization: {
+      logo: 'https://www.example.com/image/img.jpg', // Logo image URL
+      themeColor: '#80DEEA',
+      description: 'Your Description Here',
+      payNowButtonText: 'Pay Now',
+      buttonColor: '#80DEEA',
+      cancelButtonText: 'Reset',
+    },
+    notificationOption: {
+      returnUrl: this.routeUrl,
+      failureUrl: '',
+      authHeader: '',
+      cancelUrl: '',
+      notifyByRedirect: true,
+      notifyByPOST: false,
+      postAPI: '',
+      mobileNumber: '',
+      notifyBySMS: false,
+    },
+    preferences: {
+      eReceipt: false,
+      avsVerification: true,
+      customerName: '',
+      customerEmail: '',
+      customerMobile: '',
+      integrationType: 1,
+      requestCardToken: true,
+    },
+  };
+  constructor(private httpClient: HttpClient) {}
+  async ngOnInit() {
+    try {
+      const result = (await this.getPaymentForm(this.payload)) as PaymentSuccessResponse;
+      const redirectUrl = result.information;
+      window.open(redirectUrl, '_self');
+    } catch (err) {
+      // Handle error here
+      console.error('Payment form request failed', err);
+    }
+  }
+  getPaymentForm(payload: Payload) {
+    const httpOptions = {
+      headers: new HttpHeaders({
+        token: this.generatedToken,
+        withCredentials: 'false',
+      }),
+    };
+    return new Promise((resolve, reject) => {
+      this.httpClient.post(this.paymentUrl, payload, httpOptions).subscribe(
+        (data: PaymentSuccessResponse | any) => {
+          resolve(data);
+        },
+        (error: PaymentFailureResponse) => {
+          reject(error);
+        }
+      );
+    });
+  }
+}
+PHP Sample
+<?php 
+ 
+$curl = curl_init();
+ 
+curl_setopt_array($curl, array(
+    CURLOPT_URL => 'https://payment.ipospays.tech/api/v1/external-payment-transaction',
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_ENCODING => '',
+    CURLOPT_MAXREDIRS => 10,
+    CURLOPT_TIMEOUT => 0,
+    CURLOPT_FOLLOWLOCATION => true,
+    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+    CURLOPT_CUSTOMREQUEST => 'POST',
+    CURLOPT_POSTFIELDS => json_encode(array(
+        "merchantAuthentication" => array(
+            "merchantId" => "",
+            "transactionReferenceId" => ""
+        ),
+        "transactionRequest" => array(
+            "transactionType" => 1,
+            "amount" => "400",
+            "calculateFee" => true,
+            "txReferenceTag1" => array(
+                "tagLabel" => "TEST",
+                "tagValue" => "TAG"
+            ),
+            "txReferenceTag2" => array(
+                "tagLabel" => "TEST1",
+                "tagValue" => "TAG1"
+            ),
+            "txReferenceTag3" => array(
+                "tagLabel" => "TEST2",
+                "tagValue" => "TAG2"
+            )
+        ),
+        "personalization" => array(
+            "logoUrl" => "",
+            "themeColor" => "",
+            "description" => "",
+            "payNowButtonText" => "",
+            "buttonColor" => "",
+            "cancelButtonText" => ""
+        ),
+        "notificationOption" => array(
+            "postAPI" => "",
+            "failureUrl" => "",
+            "returnUrl" => "",
+            "notifyByRedirect" => false,
+            "notifyBySMS" => false,
+            "notifyByPOST" => false,
+            "authHeader" => "",
+            "cancelUrl" => "",
+            "mobileNumber" => ""
+        ),
+        "preferences" => array(
+            "integrationType" => 1,
+            "eReceipt" => true,
+            "avsVerification" => true,
+            "eReceiptInputPrompt" => true,
+            "customerName" => "",
+            "customerEmail" => "",
+            "customerMobile" => "",
+            "requestCardToken" => true
+        )
+    )),
+    CURLOPT_HTTPHEADER => array(
+        'token: ',
+        'Content-Type: application/json'
+    ),
+));
+ 
+$response = curl_exec($curl);
+curl_close($curl);
+ 
+echo $response;
+ 
+$reqjson = json_decode($response, true);
+ 
+// Uncomment below if you want to redirect based on the response
+// header("Location: " . $reqjson['information']);
+ 
+?>
+HPP – queryPaymentStatus API
+
+What is Query API?
+
+Query API lets merchants “pull” information from the gateway. It allows merchant to query the status of payment. Use same transaction reference id used while calling HPP Request Payment Page API. This dataset can then be used to create in-house reports and analytics.
+
+If the requestCardToken field is set to true as part of the Sale transaction request parameters in the getHPP API, the queryPaymentStatus API response will include the cardToken value when the merchant makes the request.
+
+Query API URL
+
+Objects	Description
+Sandbox URL:	https://api.ipospays.tech/v1/queryPaymentStatus
+Production Live URL:	https://api.ipospays.com/v1/queryPaymentStatus
+
+Request Header Info
+
+Authorization	API key
+
+Request Query Params
+
+Objects	Description
+TPN *	TPN number
+transactionReferenceId	Merchant unique transaction reference id
+
+Response Params
+
+Field	Type	Description
+iposHPResponse object ( )
+responseCode *	Number	
+
+iPOS-HP response code
+
+Values: 200 - Payment success / Generated URL success
+
+400 - Payment failure or declined / Generated URL failure
+
+401 - Cancelled by Customer
+
+402 - Rejected by Customer
+
+
+responseMessage *	String	
+
+iPOS-HP response message
+
+Values: Successful, Declined, Cancelled by Customer, Rejected by Customer
+
+
+errResponseCode`**` *	Alphanumeric	
+
+iPOS-HP error response codeType: Number
+
+Values: PG error response code / payment processor error response code
+
+Note: upon ‘responseCode’ 200, this errResponseCode and errResponseMessage will be in response payload
+
+Length: up-to 3 characters
+
+PG Response code ( 3 digits)
+
+Example: 500, 501, 502,…
+
+Processor Response code (2 characters)
+
+Example: 00, 05, …
+
+# Error code & message details shared in below doc
+
+
+errResponseMessage`**` *	String	
+
+iPOS-HP error response message
+
+Values: PG error response message / Payment processor error response message
+
+Note: upon ‘responseCode’ 200, this errResponseCode and errResponseMessage will be in response payload
+
+# Error code & message details shared in below doc
+
+
+transactionReferenceId *	String	
+
+Merchant unique transaction reference id
+
+Format: Alphanumeric
+
+Length: up-to 25 characters
+
+
+transactionType *	Number	
+
+Type of transactions processed.
+
+Note: 1 – sale, 2 - card validation , 2 – void, 3 - refund
+
+
+transactionNumber	Number	
+
+Invoice of Transaction number
+
+Length: 4 digits
+
+
+batchNumber	Number	
+
+Batch Number
+
+Length: 3 digits
+
+
+cardType	String	
+
+Credit / Debit Card Type
+
+Values: VISA, MASTERCARD, AMEX, DISCOVER, DINNERS, JCB
+
+
+cardLast4Digit	Number	
+
+Credit card last 4 digits
+
+Length: 4 digits
+
+
+amount	Float	
+
+Base or Total Amount charged from customer
+
+Format: xxxxxx.xx
+
+
+tips	Float	
+
+Tip amount charged from customer
+
+Format: xxxxxx.xx
+
+
+customFee	Float	
+
+Custom Fee charged from customer
+
+Format: xxxxxx.xx
+
+
+localTax	Float	
+
+Local tax amount charged from customer
+
+Format: xxxxxx.xx
+
+
+stateTax	Float	
+
+State tax amount charged from customer
+
+Format: xxxxxx.xx
+
+Length: 8
+
+
+totalAmount	Float	
+
+Total Amount charged from customer
+
+Format: xxxxxx.xx
+
+Length: 8
+
+
+responseApprovalCode	String	
+
+Response Approval Code
+
+Format: Alphanumeric
+
+Length: 6 chars
+
+Example: TAS164
+
+
+rrn	Number	
+
+Unique retrieval reference number
+
+Format: xxxxxx.xx
+
+Length: 12 characters
+
+
+transactionId *	Number	
+
+iPOS-HP unique transaction id
+
+Length: 32 characters
+
+
+cardToken	String	
+
+Card token value, in-order to use it for further consecutive transaction requests.
+
+Values: <card-token-value>
+
+Note: if requestCardToken is set to ‘true’, iPOS-HPP will respond with card token value. If requestCardToken is set to ‘false’, it will respond, none.
+
+
+consumerId	String	
+
+Query API – Request Sample
+
+https://api.ipospays.tech/v1/queryPaymentStatus?tpn=<tpn number>&transactionReferenceId=<Merchant Transaction Reference Id>
+
+Query API
+
+JSON Response Sample
+{
+    "iposHPResponse": {
+        "responseCode": < iPOS-HP response code >,
+        "responseMessage": "Successful/Decined/Cancelled By Customer/Rejected By Customer",
+        "errResponseCode": < Error response code >,
+        "errResponseMessage": < Error response message >,
+        "transactionReferenceId": < merchant transaction reference id >,
+        "transactionId": < Unique transaction Id of iPOS-HP >,
+        "transactionType": < 1-sale/2-card validation >,
+        "transactionNumber": < 4 digits of transaction number from processor >,
+        "batchNumber": < 3 digits of batch number from processor >,
+        "cardType": < VISA/MASTERCARD/etc...>,
+        "cardLast4Digit": < last 4 digit of credit/debit card >,
+        "amount": < base amount or total amount charged >,
+        "tips": < tip amount >,
+        "customFee": < custom fee >,
+        "localTax": < local tax >,
+        "stateTax": < state tax >,
+        "totalAmount": < total amount charged >,
+        "responseApprovalCode": < ex: TAS164 from processor >,
+        "rrn": < retrieval reference number >,
+        "cardToken": "card-token-value",
+        "consumerId": "12412313"
+    }
+}
+
+Card Token for Tokenized & Recurring Payments
+
+Get Hosted Payment Page API allows merchants to get a response of card token value/string to use it for further transactions like Sale & Recurring Payments.
+In Sale transaction type request payload, if requestCardToken is set to true, iPOS-HPP will respond with card token value as cardToken & consumer id as consumerId. if requestCardToken is set to false, iPOS-HPP will respond, none.
+
+requestCardToken Request Payload
+
+Request Payload - sample
+{
+    "merchantAuthentication": {
+        . . .  //merchant auth key & values
+    },
+    "transactionRequest": {
+        "transactionType": 1/2    // 1 - Sale / 2 - Card Validation
+        . . . //other transaction request key & values
+    },
+    "notificationOption": {
+        . . . //notification option request key & values
+    },
+    "preferences": {
+        "integrationType": "HPP integration type",
+        "avsVerification": true/false,
+        "eReceipt": true/false,
+        "eReceiptInputPrompt": true/false,
+        "customerName": "Customer_Name",
+        "customerEmail": "Customer_Email",
+        "customerMobile": "Customer_mobile_number_with_ISD_code",
+        "requestCardToken": true   // value can be true or false
+    },
+    "personalization": {
+        . . .  //personalization request key & values
+    }
+}
+
+cardToken Value Response
+
+if requestCardToken is set to true
+{
+    "iposHPResponse": {
+        "responseCode": "iPOS-HP response code like 200, 400,...",
+        "responseMessage": "Successful/Declined/Cancelled By Customer/Rejected By Customer",
+        "errResponseCode": "Error response code",
+        "errResponseMessage": "Error response message",
+        "transactionReferenceId": "merchant unique transaction reference id sent on request",
+        "transactionType": "1-sale/2-card validation",
+        "transactionId": "Unique transaction Id of iPOS-HPP",
+        "transactionNumber": "4 digits of transaction number from processor",
+        "batchNumber": "3 digits of batch number from processor",
+        "cardType": "VISA/MASTERCARD/etc...",
+        "cardLast4Digit": "last 4 digit of credit/debit card",
+        "amount": "base amount or total amount charged",
+        "tips": "tip amount",
+        "customFee": "custom fee",
+        "localTax": "local tax",
+        "stateTax": "state tax",
+        "totalAmount": "total amount charged",
+        "responseApprovalCode": "response approval code from processor ex: TAS164",
+        "rrn": "retrieval reference number from processor #219313501821",
+        "cardToken": "card-token-value",
+        "consumerId": "12412313"
+    }
+}
+if requestCardToken is set to false
+{
+    "iposHPResponse": {
+        "responseCode": "iPOS-HP response code like 200, 400,...",
+        "responseMessage": "Successful/Declined/Cancelled By Customer/Rejected By Customer",
+        "errResponseCode": "Error response code",
+        "errResponseMessage": "Error response message",
+        "transactionReferenceId": "merchant unique transaction reference id sent on request",
+        "transactionType": "1-sale/2-void/3-refund",
+        "transactionId": "Unique transaction Id of iPOS-HPP"
+        "transactionNumber": "4 digits of transaction number from processor",
+        "batchNumber": "3 digits of batch number from processor",
+        "cardType": "VISA/MASTERCARD/etc...",
+        "cardLast4Digit": "last 4 digit of credit/debit card",
+        "amount": "base amount or total amount charged",
+        "tips": "tip amount",
+        "customFee": "custom fee",
+        "localTax": "local tax",
+        "stateTax": "state tax",
+        "totalAmount": "total amount charged",
+        "responseApprovalCode": "response approval code from processor ex: TAS164",
+        "rrn": "retrieval reference number from processor #219313501821",
+        "consumerId": "12412313"
+    }
+}
+
+How to Request for a CARD VALIDATION Transaction
+
+The getHostedPaymentPage API allows merchants to validate the card to use it for further transactions like tokenized Sale & Recurring Payments. In the request payload, if transactionType is set to 2, and the amount value is set to 0, iPOS-HPP API will validate the card input entered by the customer on the payment page form.
+
+CARD VALIDATION - REQUEST PAYLOAD - SAMPLE
+{
+        "merchantAuthentication": {
+		. . .  //merchant auth key & values
+        },
+        "transactionRequest": {
+		"transactionType": 2   // Card Validation
+		. . . //other transaction request key & values
+        },
+        "notificationOption": {
+		. . . //notification option request key & values
+        },
+        "preferences": {
+		"integrationType": "HPP integration type", 
+		"avsVerification": true/false,							   
+		"eReceipt": true/false,	
+		"eReceiptInputPrompt": true/false,
+		"customerName": "Customer_Name",					   
+		"customerEmail": "Customer_Email",					   
+		"customerMobile": "Customer_mobile_number_with_ISD_code",
+		"requestCardToken": true   // to receive card token in API response 
+        },
+        "personalization": {
+		. . .  //personalization request key & values
+        },
+}
+
+Sample Response:
+
+Success Response
+{
+  "message": "Url generated successfully",
+  "information": "https://payment.ipospays.tech/api/v1/externalPay?t=<token-value>"
+}
+Failure Response
+{
+    "errors": [
+        {
+            "field": "merchantAuthentication.merchantId",
+            "message": "Invalid Merchant Id"
+        },
+	{
+            "field": "transactionRequest.transactionType",
+            "message": "Invalid Transaction Type"
+        }, ...
+    ]
+}
+
+CARD VALIDATION - SAMPLE RESPONSE
+
+(Result based on the transaction's success or failure as received from the payment processor)
+
+{
+    "iposHPResponse": {
+        "responseCode": "iPOS-HP response code like 200, 400,...",
+        "responseMessage": "Successful/Declined/Cancelled By Customer/Rejected By Customer",
+        "errResponseCode": "Error response code",
+        "errResponseMessage": "Error response message",
+        "transactionReferenceId": "merchant unique transaction reference id sent on request",
+        "transactionType": 1,
+        "transactionId": "Unique transaction Id of iPOS-HPP"
+        "transactionNumber": "4 digits of transaction number from processor",
+        "batchNumber": "3 digits of batch number from processor",
+        "cardType": "VISA/MASTERCARD/etc...",
+        "cardLast4Digit": "last 4 digit of credit/debit card",
+        "amount": "0",
+        "tips": "",
+        "customFee": "",
+        "localTax": "",
+        "stateTax": "",
+        "totalAmount": "total amount charged",
+        "responseApprovalCode": "response approval code from processor ex: TAS164",
+        "rrn": "retrieval reference number from processor #219313501821",
+        "cardToken": "card-token-response-value",
+        "consumerId": "12412313"
+    }
+}
+Error Codes and Their Meaning
+
+For a complete list of error codes and their explanations, please visit our Error Codes Reference Page.
+
+Error Codes & Messages
+Last updated on January 22, 2026
+Hosted Payment Page
+Recurring Payments
+
+Dejavoo is a Fintech payment company partnering with ISOs, agents, ISVs and resellers around the globe. Our family of terminals, payment gateway services, and innovative software solutions help facilitate card payments and manage sales.
+
+Contact us
+
+DEJAVOO HQ
+1000 Avenida Juan Ponce de Leon
+Suite 2-A, San Juan, PR 00907
+T: (877) 358-6797
+
+DEJAVOO USA
+393 Jericho Turnpike.
+Suite 203 Mineola NY, 11501 USA
+T: 1-877-DJVOSYS (358-6797)
+Sales: sales@dejavoo.io
+Dev Support: devsupport@dejavoo.io
+
+DEJAVOO CANADA
+7290 Torbram Road Unit 1 Mississauga,
+ON L4T 3Y8
+T: 647-430-0905
+
+
+© Copyright 2024, Dejavoo. All rights reserved.

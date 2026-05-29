@@ -1,0 +1,13 @@
+{
+  "title": "Apidocs | iPOSpays Developer central",
+  "url": "https://docs.ipospays.com/hosted-payment-page/apidocs",
+  "extracted_at": "2026-04-23T01:16:57.820Z",
+  "source": "iPOSpays Hosted Payment Page API Documentation",
+  "page_title": "Apidocs | iPOSpays Developer central",
+  "file_versions": {
+    "html": "ipospays-hpp-api-docs.html",
+    "text": "ipospays-hpp-api-docs.txt",
+    "metadata": "metadata.json"
+  },
+  "notes": "Extracted using browser-use automation. Contains complete API documentation for Hosted Payment Page API including version history, prerequisites, request/response parameters, sample payloads, and error codes."
+}
