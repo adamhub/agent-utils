@@ -12,7 +12,7 @@ The `homebase` command provides access to employee scheduling and time tracking 
 The `homebase` CLI is globally available. It reads configuration from a `.env` file located alongside the script, or from environment variables:
 
 - `HOMEBASE_API_KEY` — Homebase API Bearer token (required)
-- `HOMEBASE_LOCATION_UUID_MURPHYS` — Location UUID for Murphy's (optional, can be passed via `--location-uuid`)
+- `HOMEBASE_LOCATION_UUID` — Location UUID (optional, can be passed via `--location-uuid`)
 
 ## Commands
 
@@ -78,6 +78,29 @@ homebase timecards --date-filter created_at
 
 Output includes: employee name, role, clock-in/out times, labor cost, hours, breaks, and clocked-in status.
 
+### `homebase shifts`
+
+Show shift schedules for a date range.
+
+```bash
+# Today (default filter: start_at)
+homebase shifts
+
+# Date range
+homebase shifts --start-date "2026-05-25T00:00:00Z" --end-date "2026-05-29T23:59:59Z"
+
+# Filter by end_at date
+homebase shifts --date-filter end_at
+
+# Show only open (unclaimed) shifts
+homebase shifts --open
+
+# Show shifts with notes
+homebase shifts --with-note
+```
+
+Output includes: employee name, role, department, wage rate, shift times, scheduled hours, estimated cost, open/unpublished/unscheduled status, and optional notes.
+
 ## Common Workflows
 
 ### "Who's working right now?"
@@ -110,6 +133,6 @@ Look for the `Overtime` field in the output per role.
 ## Notes
 
 - All date parameters use ISO 8601 format.
-- Default location is Murphy's (from `HOMEBASE_LOCATION_UUID_MURPHYS`).
+- Default location is from `HOMEBASE_LOCATION_UUID`.
 - The `--location-uuid` flag overrides the default location for any command.
 - The API doc is at `https://app.joinhomebase.com/api/public/swagger_doc.json` if new features need to be added to the script.

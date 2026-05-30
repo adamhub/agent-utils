@@ -9,6 +9,7 @@ The utility script is homebase.py and it contains:
 - Labor costs grouped by role
 - Labor costs grouped by employee
 - Timecard records (clock-in/out)
+- Shift schedules
 
 The Homebase API doc is here: https://app.joinhomebase.com/api/public/swagger_doc.json
 Read it with browser-use MCP when you need to add a new feature to the script.
@@ -56,4 +57,23 @@ python homebase/homebase.py timecards --date-filter clock_out
 
 # Filter by created_at date
 python homebase/homebase.py timecards --date-filter created_at
+```
+
+### Show shifts
+
+```bash
+# Today (default filter: start_at)
+python homebase/homebase.py shifts
+
+# Date range
+python homebase/homebase.py shifts --start-date "2026-05-25T00:00:00Z" --end-date "2026-05-29T23:59:59Z"
+
+# Filter by end_at date
+python homebase/homebase.py shifts --date-filter end_at
+
+# Show only open (unclaimed) shifts
+python homebase/homebase.py shifts --open
+
+# Show shifts with notes
+python homebase/homebase.py shifts --with-note
 ```

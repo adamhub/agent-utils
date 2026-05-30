@@ -1,46 +1,56 @@
 #!/usr/bin/env python3
 """
-Homebase utility script for checking employee status, labor costs, and timecards.
+Homebase utility script for checking employee status, labor costs, timecards, and shifts.
 
 This script provides a simplified interface to interact with the Homebase
 Public API. Supports viewing which employees are currently working, when
 they are off, who's coming on next, labor costs grouped by role or employee,
-and timecard records.
+timecard records, and shift schedules.
 
 Usage:
     python homebase.py working [options]
     python homebase.py labor [options]
     python homebase.py employees [options]
     python homebase.py timecards [options]
+    python homebase.py shifts [options]
 
 Commands:
     working             Show which employees are currently working, off, and coming next
     labor               Show labor costs grouped by role for a date range
     employees           Show labor costs grouped by employee for a date range
     timecards           Show timecard records (clock-in/out) for a date range
+    shifts              Show shift schedules for a date range
 
 Working options:
-    --location-uuid TEXT   Location UUID (default: from env HOMEBASE_LOCATION_UUID_MURPHYS)
+    --location-uuid TEXT   Location UUID (default: from env HOMEBASE_LOCATION_UUID)
 
 Labor options:
-    --location-uuid TEXT   Location UUID (default: from env HOMEBASE_LOCATION_UUID_MURPHYS)
+    --location-uuid TEXT   Location UUID (default: from env HOMEBASE_LOCATION_UUID)
     --start-date TEXT      Start date in ISO 8601 format (default: today)
     --end-date TEXT        End date in ISO 8601 format (default: today)
 
 Employees options:
-    --location-uuid TEXT   Location UUID (default: from env HOMEBASE_LOCATION_UUID_MURPHYS)
+    --location-uuid TEXT   Location UUID (default: from env HOMEBASE_LOCATION_UUID)
     --start-date TEXT      Start date in ISO 8601 format (default: today)
     --end-date TEXT        End date in ISO 8601 format (default: today)
 
 Timecards options:
-    --location-uuid TEXT   Location UUID (default: from env HOMEBASE_LOCATION_UUID_MURPHYS)
+    --location-uuid TEXT   Location UUID (default: from env HOMEBASE_LOCATION_UUID)
     --start-date TEXT      Start date in ISO 8601 format (default: today)
     --end-date TEXT        End date in ISO 8601 format (default: today)
     --date-filter TEXT     Filter field: clock_in, clock_out, created_at, updated_at (default: clock_in)
 
+Shifts options:
+    --location-uuid TEXT   Location UUID (default: from env HOMEBASE_LOCATION_UUID)
+    --start-date TEXT      Start date in ISO 8601 format (default: today)
+    --end-date TEXT        End date in ISO 8601 format (default: today)
+    --date-filter TEXT     Filter field: start_at, end_at, created_at, updated_at (default: start_at)
+    --open                 Show only open (unclaimed) shifts
+    --with-note            Include shift notes in output
+
 Environment variables (in .env or system):
     HOMEBASE_API_KEY                    Homebase API key (Bearer token)
-    HOMEBASE_LOCATION_UUID_MURPHYS      Location UUID for Murphy's location
+    HOMEBASE_LOCATION_UUID              Location UUID (default location)
 
 Requirements:
     pip install requests
@@ -60,6 +70,18 @@ Examples:
 
     # Show timecards for a specific date range
     python homebase.py timecards --start-date "2026-05-25T00:00:00Z" --end-date "2026-05-29T23:59:59Z"
+
+    # Show all shifts for today
+    python homebase.py shifts
+
+    # Show shifts for a date range
+    python homebase.py shifts --start-date "2026-05-25T00:00:00Z" --end-date "2026-05-29T23:59:59Z"
+
+    # Show only open (unclaimed) shifts
+    python homebase.py shifts --open
+
+    # Show shifts with notes
+    python homebase.py shifts --with-note
 """
 
 import os
@@ -98,7 +120,7 @@ def load_env():
         'HOMEBASE_API_KEY',
     ]
     optional_keys = {
-        'HOMEBASE_LOCATION_UUID_MURPHYS': None,
+        'HOMEBASE_LOCATION_UUID': None,
     }
 
     config = {}
@@ -249,9 +271,9 @@ def show_working(config, location_uuid=None):
         Location UUID. Defaults to config value.
     """
     if location_uuid is None:
-        location_uuid = config.get('HOMEBASE_LOCATION_UUID_MURPHYS')
+        location_uuid = config.get('HOMEBASE_LOCATION_UUID')
         if not location_uuid:
-            print("Error: No location UUID provided. Set HOMEBASE_LOCATION_UUID_MURPHYS in .env or pass --location-uuid.")
+            print("Error: No location UUID provided. Set HOMEBASE_LOCATION_UUID in .env or pass --location-uuid.")
             return
 
     shifts, timecards = get_today_data(config, location_uuid)
@@ -401,9 +423,9 @@ def show_labor_by_role(config, start_date=None, end_date=None, location_uuid=Non
         Location UUID. Defaults to config value.
     """
     if location_uuid is None:
-        location_uuid = config.get('HOMEBASE_LOCATION_UUID_MURPHYS')
+        location_uuid = config.get('HOMEBASE_LOCATION_UUID')
         if not location_uuid:
-            print("Error: No location UUID provided. Set HOMEBASE_LOCATION_UUID_MURPHYS in .env or pass --location-uuid.")
+            print("Error: No location UUID provided. Set HOMEBASE_LOCATION_UUID in .env or pass --location-uuid.")
             return
 
     if start_date is None:
@@ -489,9 +511,9 @@ def show_labor_by_employee(config, start_date=None, end_date=None, location_uuid
         Location UUID. Defaults to config value.
     """
     if location_uuid is None:
-        location_uuid = config.get('HOMEBASE_LOCATION_UUID_MURPHYS')
+        location_uuid = config.get('HOMEBASE_LOCATION_UUID')
         if not location_uuid:
-            print("Error: No location UUID provided. Set HOMEBASE_LOCATION_UUID_MURPHYS in .env or pass --location-uuid.")
+            print("Error: No location UUID provided. Set HOMEBASE_LOCATION_UUID in .env or pass --location-uuid.")
             return
 
     if start_date is None:
@@ -591,9 +613,9 @@ def show_timecards(config, start_date=None, end_date=None, location_uuid=None,
         Which date field to filter on: clock_in, clock_out, created_at, updated_at.
     """
     if location_uuid is None:
-        location_uuid = config.get('HOMEBASE_LOCATION_UUID_MURPHYS')
+        location_uuid = config.get('HOMEBASE_LOCATION_UUID')
         if not location_uuid:
-            print("Error: No location UUID provided. Set HOMEBASE_LOCATION_UUID_MURPHYS in .env or pass --location-uuid.")
+            print("Error: No location UUID provided. Set HOMEBASE_LOCATION_UUID in .env or pass --location-uuid.")
             return
 
     if start_date is None:
@@ -709,9 +731,156 @@ def show_timecards(config, start_date=None, end_date=None, location_uuid=None,
     print()
 
 
+def show_shifts(config, start_date=None, end_date=None, location_uuid=None,
+                date_filter='start_at', open_only=False, with_note=False):
+    """
+    Show shift schedules for a date range.
+
+    Parameters
+    ----------
+    config : dict
+        Configuration dict.
+    start_date : str, optional
+        Start date in ISO 8601 format. Defaults to today start.
+    end_date : str, optional
+        End date in ISO 8601 format. Defaults to today end.
+    location_uuid : str, optional
+        Location UUID. Defaults to config value.
+    date_filter : str
+        Which date field to filter on: start_at, end_at, created_at, updated_at.
+    open_only : bool
+        Show only open (unclaimed) shifts.
+    with_note : bool
+        Include shift notes in output.
+    """
+    if location_uuid is None:
+        location_uuid = config.get('HOMEBASE_LOCATION_UUID')
+        if not location_uuid:
+            print("Error: No location UUID provided. Set HOMEBASE_LOCATION_UUID in .env or pass --location-uuid.")
+            return
+
+    if start_date is None:
+        start_date = date.today().strftime('%Y-%m-%dT00:00:00Z')
+    if end_date is None:
+        end_date = date.today().strftime('%Y-%m-%dT23:59:59Z')
+
+    params = {
+        'start_date': start_date,
+        'end_date': end_date,
+        'per_page': 100,
+        'date_filter': date_filter,
+    }
+    if open_only:
+        params['open'] = 'true'
+    if with_note:
+        params['with_note'] = 'true'
+
+    shifts = homebase_api_call(
+        config,
+        'GET',
+        f"/locations/{location_uuid}/shifts",
+        params=params,
+    )
+    if shifts is None:
+        print("Failed to fetch shifts.")
+        return
+
+    if not shifts:
+        print("No shifts found for the specified date range.")
+        return
+
+    # Parse dates for display
+    try:
+        start_display = datetime.fromisoformat(start_date.replace('Z', '+00:00')).strftime('%b %d')
+    except (ValueError, AttributeError):
+        start_display = start_date[:10]
+    try:
+        end_display = datetime.fromisoformat(end_date.replace('Z', '+00:00')).strftime('%b %d')
+    except (ValueError, AttributeError):
+        end_display = end_date[:10]
+
+    print("=" * 60)
+    print(f"  HOMEBASE - SHIFTS")
+    print(f"  {start_display} - {end_display}  (filter: {date_filter})")
+    print("=" * 60)
+
+    # Sort by start_at ascending
+    def sort_key(s):
+        sa = s.get('start_at')
+        if sa:
+            try:
+                return datetime.fromisoformat(sa.replace('Z', '+00:00'))
+            except (ValueError, AttributeError):
+                pass
+        return datetime.min.replace(tzinfo=timezone.utc)
+
+    shifts.sort(key=sort_key)
+
+    for s in shifts:
+        first_name = s.get('first_name', 'Unknown')
+        last_name = s.get('last_name', '')
+        name = f"{first_name} {last_name}".strip()
+        role = s.get('role', '')
+        department = s.get('department', '')
+        start_at_str = s.get('start_at')
+        end_at_str = s.get('end_at')
+        is_open = s.get('open', False)
+        published = s.get('published', False)
+        scheduled = s.get('scheduled', True)
+        wage_rate = s.get('wage_rate', 0)
+        labor = s.get('labor', {})
+        note = s.get('note')
+
+        # Parse times for display
+        start_display = '?'
+        if start_at_str:
+            try:
+                start_display = datetime.fromisoformat(start_at_str.replace('Z', '+00:00')).strftime('%a %b %d, %I:%M %p').lstrip('0')
+            except (ValueError, AttributeError):
+                start_display = start_at_str
+
+        end_display = '?'
+        if end_at_str:
+            try:
+                end_display = datetime.fromisoformat(end_at_str.replace('Z', '+00:00')).strftime('%I:%M %p').lstrip('0')
+            except (ValueError, AttributeError):
+                end_display = end_at_str
+
+        # Status indicators
+        status_parts = []
+        if is_open:
+            status_parts.append('\033[1;33mOpen\033[0m')
+        if not published:
+            status_parts.append('\033[1;30mUnpublished\033[0m')
+        if not scheduled:
+            status_parts.append('\033[1;34mUnscheduled\033[0m')
+        status_str = f" ({', '.join(status_parts)})" if status_parts else ""
+
+        role_str = f" [{role}]" if role else ""
+        dept_str = f" ({department})" if department else ""
+        wage_str = f" @ ${wage_rate:.2f}/hr" if wage_rate else ""
+
+        print(f"\n  \033[1;36m{name}{role_str}{dept_str}{wage_str}{status_str}\033[0m")
+        print(f"    Shift:  {start_display} - {end_display}")
+
+        if labor:
+            scheduled_hours = labor.get('scheduled_hours', 0) or 0
+            scheduled_costs = labor.get('scheduled_costs', 0) or 0
+            print(f"    Hours:  {scheduled_hours:.1f}  |  Est. Cost: ${scheduled_costs:.2f}")
+
+        if note and with_note:
+            note_text = note.get('text', '')
+            note_author = note.get('author', '')
+            if note_text:
+                author_str = f" (by {note_author})" if note_author else ""
+                print(f"    Note:   {note_text}{author_str}")
+
+    print()
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description='Homebase utility: check employee status, labor costs, and timecards.',
+        description='Homebase utility: check employee status, labor costs, timecards, and shifts.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
@@ -741,6 +910,19 @@ def main():
     timecards_parser.add_argument('--date-filter', default='clock_in',
                                   choices=['clock_in', 'clock_out', 'created_at', 'updated_at'],
                                   help='Date field to filter on (default: clock_in)')
+
+    # Shifts sub-command
+    shifts_parser = subparsers.add_parser('shifts', help='Show shift schedules for a date range')
+    shifts_parser.add_argument('--location-uuid', help='Location UUID (default: from env)')
+    shifts_parser.add_argument('--start-date', help='Start date in ISO 8601 format (default: today)')
+    shifts_parser.add_argument('--end-date', help='End date in ISO 8601 format (default: today)')
+    shifts_parser.add_argument('--date-filter', default='start_at',
+                               choices=['start_at', 'end_at', 'created_at', 'updated_at'],
+                               help='Date field to filter on (default: start_at)')
+    shifts_parser.add_argument('--open', action='store_true',
+                               help='Show only open (unclaimed) shifts')
+    shifts_parser.add_argument('--with-note', action='store_true',
+                               help='Include shift notes in output')
 
     args = parser.parse_args()
 
@@ -780,6 +962,17 @@ def main():
             end_date=args.end_date,
             location_uuid=args.location_uuid,
             date_filter=args.date_filter,
+        )
+
+    elif args.command == 'shifts':
+        show_shifts(
+            config=config,
+            start_date=args.start_date,
+            end_date=args.end_date,
+            location_uuid=args.location_uuid,
+            date_filter=args.date_filter,
+            open_only=args.open,
+            with_note=args.with_note,
         )
 
     else:
